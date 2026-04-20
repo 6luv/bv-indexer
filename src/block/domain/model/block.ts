@@ -32,12 +32,20 @@ export class Block {
       throw new Error("Invalid block hash format");
     }
 
+    if (props.hash.length !== 66) {
+      throw new Error("Invalid block hash length");
+    }
+
     if (!props.parentHash || props.parentHash.trim() === "") {
       throw new Error("Parent hash is required");
     }
 
     if (!props.parentHash.startsWith("0x")) {
       throw new Error("Invalid parent hash format");
+    }
+
+    if (props.parentHash.length !== 66) {
+      throw new Error("Invalid parent hash length");
     }
 
     if (props.timestamp < 0) {
