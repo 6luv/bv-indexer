@@ -37,6 +37,10 @@ export class Transaction {
       throw new Error("Invalid transaction hash format");
     }
 
+    if (props.hash.length !== 66) {
+      throw new Error("Invalid transaction hash length");
+    }
+
     if (!props.from || props.from.trim() === "") {
       throw new Error("From address is required");
     }
@@ -55,6 +59,10 @@ export class Transaction {
 
     if (!props.blockHash.startsWith("0x")) {
       throw new Error("Invalid block hash format");
+    }
+
+    if (props.blockHash.length !== 66) {
+      throw new Error("Invalid block hash length");
     }
 
     if (props.blockNumber < 0n) {
