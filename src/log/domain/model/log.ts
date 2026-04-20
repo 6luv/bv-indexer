@@ -81,6 +81,10 @@ export class Log {
       throw new Error("Invalid transaction hash format");
     }
 
+    if (props.transactionHash.length !== 66) {
+      throw new Error("Invalid transaction hash length");
+    }
+
     if (props.logIndex < 0) {
       throw new Error("Log index must be >= 0");
     }
