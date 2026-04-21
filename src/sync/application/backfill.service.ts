@@ -3,7 +3,6 @@ import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { LogService } from "@/log/application/log.service";
 import { TransactionService } from "@/transaction/application/transaction.service";
 import { TransferEventService } from "@/transfer-event/application/transfer-event.service";
-import { start } from "node:repl";
 import { BackfillBatch } from "./types/backfill-batch";
 
 export class BackfillService {
@@ -40,10 +39,10 @@ export class BackfillService {
 
   // 시작 블록 > 종료 블록 검증
   private validateBlockRange(startBlock: bigint, endBlock: bigint): void {
-    if (startBlock > endBlock)
-      throw new Error("startBlock must be less than or equal to endBlock");
     if (startBlock < 0n || endBlock < 0n)
       throw new Error("Block number must be >= 0");
+    if (startBlock > endBlock)
+      throw new Error("startBlock must be less than or equal to endBlock");
   }
 
   // batchSize 검증
