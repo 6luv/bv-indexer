@@ -9,10 +9,10 @@ export class TransactionService {
   ) {}
 
   // 특정 블록의 트랜잭션 목록 조회
-  async getTransactionByBlockNumber(
+  async getTransactionsByBlockNumber(
     blockNumber: bigint,
   ): Promise<Transaction[]> {
-    return this.transactionRpcPort.getTransactionByBlockNumber(blockNumber);
+    return this.transactionRpcPort.getTransactionsByBlockNumber(blockNumber);
   }
 
   // 특정 범위의 블록들에 포함된 트랜잭션 목록 조회
@@ -55,7 +55,7 @@ export class TransactionService {
   // 특정 블록 번호로 트랜잭션 목록 조회하여 저장
   async saveTransactionsByBlockNumber(blockNumber: bigint): Promise<void> {
     const transactions =
-      await this.transactionRpcPort.getTransactionByBlockNumber(blockNumber);
+      await this.transactionRpcPort.getTransactionsByBlockNumber(blockNumber);
     if (transactions.length === 0) return;
 
     await this.saveTransactions(transactions);
