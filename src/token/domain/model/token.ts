@@ -1,5 +1,6 @@
 export type TokenProps = {
   tokenAddress: string;
+  name: string;
   symbol: string;
   decimals: number;
   chainId: number;
@@ -7,6 +8,7 @@ export type TokenProps = {
 
 export class Token {
   public readonly tokenAddress: string;
+  public readonly name: string;
   public readonly symbol: string;
   public readonly decimals: number;
   public readonly chainId: number;
@@ -14,6 +16,7 @@ export class Token {
   constructor(props: TokenProps) {
     this.validate(props);
     this.tokenAddress = props.tokenAddress;
+    this.name = props.name;
     this.symbol = props.symbol;
     this.decimals = props.decimals;
     this.chainId = props.chainId;
@@ -26,6 +29,10 @@ export class Token {
 
     if (!props.tokenAddress.startsWith("0x")) {
       throw new Error("Invalid token address format");
+    }
+
+    if (!props.name || props.name.trim() === "") {
+      throw new Error("Token name is required");
     }
 
     if (!props.symbol || props.symbol.trim() === "") {
