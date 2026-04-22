@@ -78,4 +78,14 @@ export class TransactionService {
 
     await this.saveTransactions(transactions);
   }
+
+  async saveTransactionsByHashes(txHashes: string[]): Promise<void> {
+    if (!txHashes.length) return;
+
+    const transactions =
+      await this.transactionRpcPort.getTransactionsByHashes(txHashes);
+    if (!transactions.length) return;
+
+    await this.transactionRepository.saveTransactions(transactions);
+  }
 }

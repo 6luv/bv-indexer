@@ -15,10 +15,28 @@ import { LogRpcClient } from "@/log/infrastructure/rpc/log-rpc-client";
 import { Erc20TransferEventDecoder } from "@/transfer-event/infrastructure/decoder/erc20-transfer-event.decoder";
 
 async function main(): Promise<void> {
-  // block
-  const blockRepository = new InMemoryBlockRepository();
-  const blockRpcClient = new BlockRpcClient();
-  const blockService = new BlockService(blockRpcClient, blockRepository);
+  const [, , targetWalletAddressArg, startBlockArg, endBlockArg, batchSizeArg] =
+    process.argv;
+  if (
+    !targetWalletAddressArg ||
+    !startBlockArg ||
+    !endBlockArg ||
+    !batchSizeArg
+  ) {
+    throw new Error(
+      "Usage: npm run dev:backfill -- <targetWalletAddress> <startBlock> <endBlock> <batchSize>",
+    );
+  }
+
+  const targetWalletAddress = targetWalletAddressArg;
+  const startBlock = BigInt(startBlockArg);
+  const endBlock = BigInt(endBlockArg);
+  const batchSize = parseInt(batchSizeArg);
+
+  console.log("============= Backfill Start =============");
+  console.log(
+    `targetWalletAddress: ${targetWalletAddress}, startBlock: ${startBlock}, endBlock: ${endBlock}, batchSize: ${batchSize}`,
+  );
 
   // transaction
   const transactionRepository = new InMemoryTransactionRepository();
@@ -47,13 +65,13 @@ async function main(): Promise<void> {
 
   // backfill
   const backfillService = new BackfillService(
-    blockService,
     transactionService,
     logService,
     transferEventService,
     checkpointService,
+    targetWalletAddress,
   );
-  await backfillService.runBackfill(0n, 10000n, 100);
+  await backfillService.runBackfill(startBlock, endBlock, batchSize);
 }
 
 main().catch((error) => {

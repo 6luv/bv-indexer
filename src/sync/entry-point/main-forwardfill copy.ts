@@ -15,6 +15,17 @@ import { Erc20TransferEventDecoder } from "@/transfer-event/infrastructure/decod
 import { ForwardfillService } from "../application/forwardfill.service";
 
 async function main(): Promise<void> {
+  const [, , targetWalletArg] = process.argv;
+
+  if (!targetWalletArg) {
+    throw new Error("Usage: npm run dev:forwardfill -- <targetWallet>");
+  }
+
+  const targetWalletAddress = targetWalletArg;
+
+  console.log("============= Forwardfill Start =============");
+  console.log(`targetWalletAddress: ${targetWalletAddress}`);
+
   // block
   const blockRepository = new InMemoryBlockRepository();
   const blockRpcClient = new BlockRpcClient();
@@ -52,11 +63,13 @@ async function main(): Promise<void> {
     logService,
     transferEventService,
     checkpointService,
+    targetWalletAddress,
   );
+
   await forwardfillService.runForwardFill();
 }
 
 main().catch((error) => {
-  console.error("Backfill failed: ", error);
+  console.error("Forwardfill failed: ", error);
   process.exit(1);
 });

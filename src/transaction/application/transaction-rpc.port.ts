@@ -6,4 +6,5 @@ export interface TransactionRpcPort {
     fromBlock: bigint,
     toBlock: bigint,
   ): Promise<Transaction[]>;
+  getTransactionsByHashes(txHashes: string[]): Promise<Transaction[]>;
 }

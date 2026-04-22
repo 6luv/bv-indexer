@@ -1,19 +1,21 @@
+import { publicClient } from "@/shared/viem/public-client";
 import { BlockRpcPort } from "../../application/block-rpc.port";
 import { Block } from "../../domain/model/block";
 
 export class BlockRpcClient implements BlockRpcPort {
   async getLatestBlockNumber(): Promise<bigint> {
-    // rpc
-    return 0n;
+    return publicClient.getBlockNumber();
   }
 
   async getBlockByBlockNumber(blockNumber: bigint): Promise<Block | null> {
-    // rpc
+    const block = await publicClient.getBlock({ blockNumber });
+    if (!block) return null;
+
     return new Block({
-      number: 0n,
-      hash: "0x" + "0".repeat(64),
-      parentHash: "0x" + "0".repeat(64),
-      timestamp: Date.now(),
+      number: block.number,
+      hash: block.hash,
+      parentHash: block.parentHash,
+      timestamp: Number(block.timestamp),
     });
   }
 

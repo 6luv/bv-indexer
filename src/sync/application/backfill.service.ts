@@ -7,11 +7,11 @@ import { BackfillBatch } from "./types/backfill-batch";
 
 export class BackfillService {
   constructor(
-    private readonly blockService: BlockService,
     private readonly transactionService: TransactionService,
     private readonly logService: LogService,
     private readonly transferEventService: TransferEventService,
     private readonly checkpointService: CheckpointService,
+    private readonly targetWalletAddress: string,
   ) {}
 
   // 시작 블록부터 종료 블록까지 과거 데이터 백필
@@ -81,21 +81,33 @@ export class BackfillService {
   async processBatch(batch: BackfillBatch): Promise<void> {
     const { fromBlock, toBlock } = batch;
 
-    // 원시 데이터 저장
-    await this.blockService.saveBlocks(fromBlock, toBlock);
-    await this.transactionService.saveTransactionsInBlockRange(
-      fromBlock,
-      toBlock,
-    );
-    await this.logService.saveLogsInBlockRange(fromBlock, toBlock);
-
     // 로그 조회
     const logs = await this.logService.getLogsInBlockRange(fromBlock, toBlock);
+    console.log(`[BackillService] loded logs: ${logs.length}`);
 
-    // Transfer 이벤트 디코딩 및 저장
+    // Transfer 이벤트 디코딩
     const transferEvents =
       await this.transferEventService.decodeTransferEventLogs(logs);
-    await this.transferEventService.saveTransferEvents(transferEvents);
+    console.log(
+      `[BackillService] decoded transfer events: ${transferEvents.length}`,
+    );
+
+    const normalizedTarget = this.targetWalletAddress.toLowerCase();
+    const filteredTransferEvents = transferEvents.filter(
+      (event) =>
+        event.from.toLowerCase() === normalizedTarget ||
+        event.to.toLowerCase() === normalizedTarget,
+    );
+    console.log(`
+      [BackillService] filtered transfer events: ${filteredTransferEvents.length}`);
+
+    const txHashes = [
+      ...new Set(filteredTransferEvents.map((event) => event.transactionHash)),
+    ];
+    console.log(`[BackfillService] loaded transactions: ${txHashes.length}`);
+
+    await this.transactionService.saveTransactionsByHashes(txHashes);
+    await this.transferEventService.saveTransferEvents(filteredTransferEvents);
 
     // 체크포인트 갱신
     await this.checkpointService.updateLastProcessedBlockNumber(

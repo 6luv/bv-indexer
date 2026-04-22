@@ -1,19 +1,27 @@
 import { LogRpcPort } from "@/log/application/log-rpc.port";
 import { Log } from "@/log/domain/model/log";
+import { publicClient } from "@/shared/viem/public-client";
 
 export class LogRpcClient implements LogRpcPort {
   async getLogsByBlockNumber(blockNumber: bigint): Promise<Log[]> {
-    return [
-      new Log({
-        address: "0x" + "1".repeat(40),
-        topics: ["0x" + "2".repeat(64)],
-        data: "0x" + "3".repeat(64),
-        blockNumber,
-        blockTimestamp: Date.now(),
-        transactionHash: "0x" + "4".repeat(64),
-        logIndex: 0,
-      }),
-    ];
+    const logs = await publicClient.getLogs({
+      fromBlock: blockNumber,
+      toBlock: blockNumber,
+    });
+    if (logs.length === 0) return [];
+
+    return logs.map(
+      (log) =>
+        new Log({
+          address: log.address,
+          topics: log.topics,
+          data: log.data,
+          blockNumber: log.blockNumber,
+          blockTimestamp: Number(log.blockTimestamp),
+          transactionHash: log.transactionHash,
+          logIndex: log.logIndex,
+        }),
+    );
   }
 
   async getLogsInBlockRange(

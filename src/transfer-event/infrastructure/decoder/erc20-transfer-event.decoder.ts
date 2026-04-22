@@ -4,7 +4,7 @@ import { TransferEvent } from "@/transfer-event/domain/model/transfer-event";
 
 export class Erc20TransferEventDecoder implements TransferEventDecoder {
   private static readonly TRANSFER_EVENT_TOPIC =
-    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55aeb";
+    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
   async decode(log: Log): Promise<TransferEvent | null> {
     if (log.topics.length < 3) return null;
