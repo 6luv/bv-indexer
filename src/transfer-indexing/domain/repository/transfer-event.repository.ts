@@ -7,4 +7,5 @@ export interface TransferEventRepository {
     transactionHash: string,
     logIndex: number,
   ): Promise<boolean>;
+  count(): Promise<number>;
 }

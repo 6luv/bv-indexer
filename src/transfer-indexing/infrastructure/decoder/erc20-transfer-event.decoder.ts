@@ -3,16 +3,29 @@ import { Log } from "@/transfer-indexing/domain/model/log";
 import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
 
 export class Erc20TransferEventDecoder implements TransferEventDecoder {
-  private static readonly TRANSFER_EVENT_TOPIC =
+  public static readonly TRANSFER_EVENT_TOPIC =
     "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
   async decode(log: Log): Promise<TransferEvent | null> {
-    if (log.getTopics().length < 3) return null;
-    if (log.getTopics()[0] !== Erc20TransferEventDecoder.TRANSFER_EVENT_TOPIC)
-      return null;
+    const topics = log.getTopics();
 
-    const from = "0x" + log.getTopics()[1]?.slice(26);
-    const to = "0x" + log.getTopics()[2]?.slice(26);
+    if (topics.length < 3) return null;
+
+    const topic0 = topics[0];
+    const topic1 = topics[1];
+    const topic2 = topics[2];
+
+    if (!topic0 || !topic1 || !topic2) return null;
+
+    if (
+      topic0.toLowerCase() !==
+      Erc20TransferEventDecoder.TRANSFER_EVENT_TOPIC.toLowerCase()
+    ) {
+      return null;
+    }
+
+    const from = "0x" + topic1.slice(26);
+    const to = "0x" + topic2.slice(26);
 
     let value: bigint;
     try {

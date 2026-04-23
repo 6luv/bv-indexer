@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx src/main.ts",
+    "dev": "tsx src/main-server.ts",
     "dev:backfill": "tsx src/sync/entry-point/main-backfill.ts",
     "test": "jest"
   },

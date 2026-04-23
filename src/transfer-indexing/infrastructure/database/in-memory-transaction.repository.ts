@@ -42,4 +42,8 @@ export class InMemoryTransactionRepository implements TransactionRepository {
   async existsByHash(transactionHash: string): Promise<boolean> {
     return this.transactions.has(transactionHash);
   }
+
+  async count(): Promise<number> {
+    return this.transactions.size;
+  }
 }

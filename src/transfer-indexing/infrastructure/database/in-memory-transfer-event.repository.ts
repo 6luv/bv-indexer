@@ -37,4 +37,8 @@ export class InMemoryTransferEventRepository implements TransferEventRepository 
     const key = this.createKey(transactionHash, logIndex);
     return this.transferEvents.has(key);
   }
+
+  async count(): Promise<number> {
+    return this.transferEvents.size;
+  }
 }

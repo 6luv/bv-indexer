@@ -1,7 +1,4 @@
-import {
-  BlockRangeTransferService,
-  LogTransferService,
-} from "@/transfer-indexing/application/transfer-indexing-manage.service";
+import { BlockRangeTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { BackfillBatch } from "./types/backfill-batch";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
