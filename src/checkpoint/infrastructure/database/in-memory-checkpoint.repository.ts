@@ -1,8 +1,6 @@
-import {
-  Checkpoint,
-  CheckpointType,
-} from "@/checkpoint/domain/model/checkpoint";
+import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { CheckpointRepository } from "@/checkpoint/domain/repository/checkpoint.repository";
+import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 
 export class InMemoryCheckpointRepository implements CheckpointRepository {
   private readonly checkpoints = new Map<CheckpointType, Checkpoint>();

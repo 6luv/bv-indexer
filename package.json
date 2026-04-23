@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "tsx src/main.ts",
     "dev:backfill": "tsx src/sync/entry-point/main-backfill.ts",
     "test": "jest"
   },
@@ -13,11 +14,15 @@
   "type": "commonjs",
   "dependencies": {
     "@types/node": "^25.6.0",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
+    "express": "^5.2.1",
     "ts-node": "^10.9.2",
     "viem": "^2.48.4"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",

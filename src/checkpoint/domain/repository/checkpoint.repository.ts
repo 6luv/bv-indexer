@@ -1,4 +1,5 @@
-import { Checkpoint, CheckpointType } from "../model/checkpoint";
+import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { Checkpoint } from "../model/checkpoint";
 
 export interface CheckpointRepository {
   findByType(type: CheckpointType): Promise<Checkpoint | null>;
