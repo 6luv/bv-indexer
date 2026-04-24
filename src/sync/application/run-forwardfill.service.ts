@@ -25,7 +25,7 @@ export class RunForwardfillService {
     );
 
     let nextBlockNumber = checkpoint
-      ? checkpoint.lastProcessedBlock + 1n
+      ? checkpoint.getLastProcessedBlock() + 1n
       : await this.getInitialBlockNumber();
 
     await this.startForwardfillLoop(nextBlockNumber);

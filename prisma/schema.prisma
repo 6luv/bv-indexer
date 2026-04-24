@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CheckpointType {
+  BACKFILL
+  FORWARDFILL
+}
+
+model Checkpoint {
+  type               CheckpointType @id
+  lastProcessedBlock BigInt
+  updatedAt          DateTime
+
+  @@map("checkpoint")
+}
+
+model Transaction {
+  hash           String   @id @db.VarChar(66)
+  fromAddress    String   @map("from_address") @db.VarChar(42)
+  toAddress      String?  @map("to_address") @db.VarChar(42)
+  value          BigInt
+  blockNumber    BigInt   @map("block_number")
+  blockHash      String   @map("block_hash") @db.VarChar(66)
+  blockTimestamp BigInt   @map("block_timestamp")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  transferEvents TransferEvent[]
+
+  @@index([blockNumber])
+  @@map("transactions")
+}
+
+model TransferEvent {
+  id              Int      @id @default(autoincrement())
+  tokenAddress    String   @map("token_address") @db.VarChar(42)
+  fromAddress     String   @map("from_address") @db.VarChar(42)
+  toAddress       String   @map("to_address") @db.VarChar(42)
+  value           BigInt
+  blockNumber     BigInt   @map("block_number")
+  blockTimestamp  BigInt   @map("block_timestamp")
+  transactionHash String   @map("transaction_hash") @db.VarChar(66)
+  logIndex        Int      @map("log_index")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionHash], references: [hash], onDelete: Restrict)
+
+  @@unique([transactionHash, logIndex])
+  @@index([blockNumber])
+  @@index([fromAddress])
+  @@index([toAddress])
+  @@index([tokenAddress])
+  @@map("transfer_events")
+}

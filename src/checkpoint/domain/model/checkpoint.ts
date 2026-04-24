@@ -2,9 +2,9 @@ import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 
 export class Checkpoint {
   constructor(
-    public readonly type: CheckpointType,
-    public readonly lastProcessedBlock: bigint,
-    public readonly updatedAt: number,
+    private readonly type: CheckpointType,
+    private readonly lastProcessedBlock: bigint,
+    private readonly updatedAt: number,
   ) {
     this.validate();
   }

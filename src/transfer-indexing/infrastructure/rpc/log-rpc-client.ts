@@ -21,6 +21,7 @@ export class LogRpcClient implements LogRpcPort {
     return logs.flatMap((log) => {
       const blockNumberValue = log.blockNumber;
       const transactionHash = log.transactionHash;
+      const blockTimestamp = log.blockTimestamp;
       const logIndex = log.logIndex;
 
       if (
@@ -39,7 +40,7 @@ export class LogRpcClient implements LogRpcPort {
           [...log.topics],
           log.data,
           blockNumberValue,
-          0,
+          Number(blockTimestamp),
           transactionHash,
           Number(logIndex),
         ),
@@ -63,6 +64,7 @@ export class LogRpcClient implements LogRpcPort {
     return logs.flatMap((log) => {
       const blockNumberValue = log.blockNumber;
       const transactionHash = log.transactionHash;
+      const blockTimestamp = log.blockTimestamp;
       const logIndex = log.logIndex;
 
       if (
@@ -81,7 +83,7 @@ export class LogRpcClient implements LogRpcPort {
           [...log.topics],
           log.data,
           blockNumberValue,
-          0,
+          Number(blockTimestamp),
           transactionHash,
           Number(logIndex),
         ),

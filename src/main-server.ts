@@ -2,24 +2,21 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
-import { InMemoryCheckpointRepository } from "@/checkpoint/infrastructure/database/in-memory-checkpoint.repository";
-
 import {
   BlockTransferService,
   BlockRangeTransferService,
   LogTransferService,
 } from "@/transfer-indexing/application/transfer-indexing-manage.service";
-
 import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
-import { InMemoryTransactionRepository } from "@/transfer-indexing/infrastructure/database/in-memory-transaction.repository";
-import { InMemoryTransferEventRepository } from "@/transfer-indexing/infrastructure/database/in-memory-transfer-event.repository";
-
 import { RunBackfillService } from "@/sync/application/run-backfill.service";
 import { RunForwardfillService } from "@/sync/application/run-forwardfill.service";
 import { TransactionRpcClient } from "./transfer-indexing/infrastructure/rpc/transaction-rpc-client";
 import { LogRpcClient } from "./transfer-indexing/infrastructure/rpc/log-rpc-client";
 import { createSyncRouter } from "./sync/entry-point/sync.controller";
 import { BlockRpcClient } from "./sync/infrastructure/rpc/block-rpc-client";
+import { PostgresTransactionRepository } from "./transfer-indexing/infrastructure/database/postgres-transaction.repository";
+import { PostgresTransferEventRepository } from "./transfer-indexing/infrastructure/database/postgres-transfer-event.repository";
+import { PostgresCheckpointRepository } from "./checkpoint/infrastructure/database/postgres-checkpoint.repository";
 
 async function main(): Promise<void> {
   const app = express();
@@ -28,12 +25,10 @@ async function main(): Promise<void> {
   app.use(cors({ origin: "*" }));
   app.use(express.json());
 
-  const infuraKey = process.env.INFURA_API_KEY;
-
   const transactionRpcClient = new TransactionRpcClient();
-  const transactionRepository = new InMemoryTransactionRepository();
-  const transferEventRepository = new InMemoryTransferEventRepository();
-  const checkpointRepository = new InMemoryCheckpointRepository();
+  const transactionRepository = new PostgresTransactionRepository();
+  const transferEventRepository = new PostgresTransferEventRepository();
+  const checkpointRepository = new PostgresCheckpointRepository();
   const blockRpcClient = new BlockRpcClient();
   const logRpcClient = new LogRpcClient();
   const transferEventDecoder = new Erc20TransferEventDecoder();

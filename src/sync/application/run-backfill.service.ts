@@ -23,8 +23,8 @@ export class RunBackfillService {
     );
     let adjustedStartBlock = startBlock;
 
-    if (checkpoint && checkpoint.lastProcessedBlock >= startBlock) {
-      adjustedStartBlock = checkpoint.lastProcessedBlock + 1n;
+    if (checkpoint && checkpoint.getLastProcessedBlock() >= startBlock) {
+      adjustedStartBlock = checkpoint.getLastProcessedBlock() + 1n;
     }
 
     if (adjustedStartBlock > endBlock) return;
