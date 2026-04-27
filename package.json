@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx src/main-server.ts",
     "dev:backfill": "tsx src/sync/entry-point/main-backfill.ts",
-    "test": "jest"
+    "test": "jest",
+    "test:integration": "dotenv -e .env.test -- jest --testMatch \"**/tests/integration/**/*.spec.ts\" --runInBand --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +30,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
     "@types/pg": "^8.20.0",
+    "dotenv-cli": "^11.0.0",
     "jest": "^30.3.0",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
