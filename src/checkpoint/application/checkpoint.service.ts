@@ -25,4 +25,8 @@ export class CheckpointService {
 
     await this.checkpointRepository.save(checkpoint);
   }
+
+  async deleteCheckpoint(type: CheckpointType): Promise<void> {
+    await this.checkpointRepository.delete(type);
+  }
 }
