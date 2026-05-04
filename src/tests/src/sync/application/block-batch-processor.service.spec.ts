@@ -1,17 +1,25 @@
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
-import { BlockRangeTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
+import {
+  BlockRangeTransferService,
+  BlockTransferService,
+} from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { BlockBatchProcessor } from "@/sync/application/block-batch-processor.service";
 
 describe("BlockBatchProcessor", () => {
   let blockRangeTransferService: jest.Mocked<BlockRangeTransferService>;
   let checkpointService: jest.Mocked<CheckpointService>;
   let blockBatchProcessor: BlockBatchProcessor;
+  let blockTransferService: jest.Mocked<BlockTransferService>;
 
   beforeEach(() => {
     blockRangeTransferService = {
       execute: jest.fn(),
     } as unknown as jest.Mocked<BlockRangeTransferService>;
+
+    blockTransferService = {
+      execute: jest.fn(),
+    } as unknown as jest.Mocked<BlockTransferService>;
 
     checkpointService = {
       updateLastProcessedBlockNumber: jest.fn(),
@@ -26,6 +34,7 @@ describe("BlockBatchProcessor", () => {
 
     blockBatchProcessor = new BlockBatchProcessor(
       blockRangeTransferService,
+      blockTransferService,
       checkpointService,
     );
   });
