@@ -3,37 +3,32 @@ import { BlockRangeTransferService } from "@/transfer-indexing/application/trans
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { RunBackfillService } from "@/sync/application/run-backfill.service";
+import { BlockBatchProcessor } from "@/sync/application/block-batch-processor.service";
 
 describe("RunBackfillService", () => {
-  let blockRangeTransferService: jest.Mocked<BlockRangeTransferService>;
   let checkpointService: jest.Mocked<CheckpointService>;
   let runBackfillService: RunBackfillService;
+  let blockBatchProcessor: jest.Mocked<BlockBatchProcessor>;
 
   beforeEach(() => {
-    blockRangeTransferService = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<BlockRangeTransferService>;
-
     checkpointService = {
       getLastProcessedBlockNumber: jest.fn(),
       updateLastProcessedBlockNumber: jest.fn(),
       deleteCheckpoint: jest.fn(),
     } as unknown as jest.Mocked<CheckpointService>;
 
-    runBackfillService = new RunBackfillService(
-      blockRangeTransferService,
-      checkpointService,
-    );
+    blockBatchProcessor = {
+      processAll: jest.fn(),
+      process: jest.fn(),
+    } as unknown as jest.Mocked<BlockBatchProcessor>;
 
-    blockRangeTransferService.execute.mockResolvedValue({
-      logCount: 0,
-      decodedTransferEventCount: 0,
-      indexedTransferEventCount: 0,
-      transactionCount: 0,
-    });
+    runBackfillService = new RunBackfillService(
+      checkpointService,
+      blockBatchProcessor,
+    );
   });
 
-  it("체크포인트가 없으면 startBlock부터 endBlock까지 batchSize 단위로 처리해야 한다.", async () => {
+  it("체크포인트가 없으면 startBlock부터 endBlock까지 batchSize 단위로 배치를 생성해 처리해야 한다.", async () => {
     // Given
     checkpointService.getLastProcessedBlockNumber.mockResolvedValue(null);
 
@@ -41,37 +36,13 @@ describe("RunBackfillService", () => {
     await runBackfillService.execute(1n, 10n, 3);
 
     // Then
-    expect(blockRangeTransferService.execute).toHaveBeenCalledTimes(4);
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      1,
-      1n,
-      3n,
-    );
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      2,
-      4n,
-      6n,
-    );
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      3,
-      7n,
-      9n,
-    );
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      4,
-      10n,
-      10n,
-    );
-
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledTimes(4);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(1, 3n, CheckpointType.BACKFILL);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(4, 10n, CheckpointType.BACKFILL);
+    expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
+    expect(blockBatchProcessor.processAll).toHaveBeenCalledWith([
+      { fromBlock: 1n, toBlock: 3n },
+      { fromBlock: 4n, toBlock: 6n },
+      { fromBlock: 7n, toBlock: 9n },
+      { fromBlock: 10n, toBlock: 10n },
+    ]);
   });
 
   it("체크포인트가 startBlock 이상이면 checkpoint 다음 블록부터 처리해야 한다.", async () => {
@@ -88,27 +59,11 @@ describe("RunBackfillService", () => {
     await runBackfillService.execute(1n, 10n, 3);
 
     // Then
-    expect(blockRangeTransferService.execute).toHaveBeenCalledTimes(2);
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      1,
-      6n,
-      8n,
-    );
-    expect(blockRangeTransferService.execute).toHaveBeenNthCalledWith(
-      2,
-      9n,
-      10n,
-    );
-
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledTimes(2);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(1, 8n, CheckpointType.BACKFILL);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(2, 10n, CheckpointType.BACKFILL);
+    expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
+    expect(blockBatchProcessor.processAll).toHaveBeenCalledWith([
+      { fromBlock: 6n, toBlock: 8n },
+      { fromBlock: 9n, toBlock: 10n },
+    ]);
   });
 
   it("체크포인트가 endBlock 이상이면 아무 작업도 하지 않아야 한다.", async () => {
@@ -125,7 +80,7 @@ describe("RunBackfillService", () => {
     await runBackfillService.execute(1n, 10n, 3);
 
     // Then
-    expect(blockRangeTransferService.execute).not.toHaveBeenCalled();
+    expect(blockBatchProcessor.processAll).not.toHaveBeenCalled();
     expect(
       checkpointService.updateLastProcessedBlockNumber,
     ).not.toHaveBeenCalled();
@@ -180,37 +135,5 @@ describe("RunBackfillService", () => {
     await expect(
       runBackfillService.execute(1n, 10n, batchSize),
     ).rejects.toThrow("Batch size must be greater than 0");
-  });
-
-  it("배치 처리 중 실패하면 이후 배치와 체크포인트 업데이트를 진행하지 않아야 한다.", async () => {
-    // Given
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(null);
-
-    blockRangeTransferService.execute
-      .mockResolvedValueOnce({
-        logCount: 0,
-        decodedTransferEventCount: 0,
-        indexedTransferEventCount: 0,
-        transactionCount: 0,
-      })
-      .mockRejectedValueOnce(new Error("RPC Error"));
-
-    runBackfillService = new RunBackfillService(
-      blockRangeTransferService,
-      checkpointService,
-    );
-
-    // When & Then
-    await expect(runBackfillService.execute(1n, 10n, 3)).rejects.toThrow(
-      "RPC Error",
-    );
-
-    expect(blockRangeTransferService.execute).toHaveBeenCalledTimes(2);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledWith(3n, CheckpointType.BACKFILL);
   });
 });
