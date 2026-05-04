@@ -1,53 +1,19 @@
 import { TransactionRepository } from "../domain/repository/transaction.repository";
 import { TransferEventRepository } from "../domain/repository/transfer-event.repository";
-import { TransferEventDecoder } from "./decoder/transfer-event.decoder";
 import { IndexedTransferResult } from "./types/indexed-transfer-result";
 import { TransferEvent } from "../domain/model/transfer-event";
 import { Log } from "../domain/model/log";
 import { Transaction } from "../domain/model/transaction";
-import { LogRpcPort } from "./port/log-rpc.port";
-import { TransactionRpcPort } from "./port/transaction-rpc.port";
 import { Injectable } from "@nestjs/common";
-
-// 블록 하나의 로그를 조회해서 transfer 인덱싱 실행
-@Injectable()
-export class BlockTransferService {
-  constructor(
-    private readonly logRpcPort: LogRpcPort,
-    private readonly logTransferService: LogTransferService,
-  ) {}
-
-  async execute(blockNumber: bigint): Promise<IndexedTransferResult> {
-    const logs = await this.logRpcPort.getLogsByBlockNumber(blockNumber);
-    return this.logTransferService.execute(logs);
-  }
-}
-
-@Injectable()
-export class BlockRangeTransferService {
-  constructor(
-    private readonly logRpcPort: LogRpcPort,
-    private readonly logTransferService: LogTransferService,
-  ) {}
-
-  async execute(
-    fromBlock: bigint,
-    toBlock: bigint,
-  ): Promise<IndexedTransferResult> {
-    if (fromBlock > toBlock) {
-      throw new Error("fromBlock must be less than or equal to toBlock");
-    }
-
-    const logs = await this.logRpcPort.getLogsInBlockRange(fromBlock, toBlock);
-    return this.logTransferService.execute(logs);
-  }
-}
+import { LogReader } from "../domain/protocol/log-reader.protocol";
+import { TransactionReader } from "../domain/protocol/transaction-reader.protocol";
+import { TransferEventDecoder } from "../domain/protocol/decoder/transfer-event.decoder";
 
 @Injectable()
 export class LogTransferService {
   constructor(
     private readonly transferEventDecoder: TransferEventDecoder,
-    private readonly transactionRpcPort: TransactionRpcPort,
+    private readonly transactionReader: TransactionReader,
     private readonly transactionRepository: TransactionRepository,
     private readonly transferEventRepository: TransferEventRepository,
     private readonly targetWalletAddress: string,
@@ -59,7 +25,7 @@ export class LogTransferService {
     const txHashes = this.getUniqueTransactionHashes(indexedTransferEvents);
 
     const transactions =
-      await this.transactionRpcPort.getTransactionsByHashes(txHashes);
+      await this.transactionReader.getTransactionsByHashes(txHashes);
 
     await this.saveTransactionsIfAbsent(transactions);
     await this.saveTransferEventsIfAbsent(indexedTransferEvents);
@@ -129,5 +95,39 @@ export class LogTransferService {
         await this.transferEventRepository.saveTransferEvent(transferEvent);
       }
     }
+  }
+}
+
+// 블록 하나의 로그를 조회해서 transfer 인덱싱 실행
+@Injectable()
+export class BlockTransferService {
+  constructor(
+    private readonly logReader: LogReader,
+    private readonly logTransferService: LogTransferService,
+  ) {}
+
+  async execute(blockNumber: bigint): Promise<IndexedTransferResult> {
+    const logs = await this.logReader.getLogsByBlockNumber(blockNumber);
+    return this.logTransferService.execute(logs);
+  }
+}
+
+@Injectable()
+export class BlockRangeTransferService {
+  constructor(
+    private readonly logReader: LogReader,
+    private readonly logTransferService: LogTransferService,
+  ) {}
+
+  async execute(
+    fromBlock: bigint,
+    toBlock: bigint,
+  ): Promise<IndexedTransferResult> {
+    if (fromBlock > toBlock) {
+      throw new Error("fromBlock must be less than or equal to toBlock");
+    }
+
+    const logs = await this.logReader.getLogsInBlockRange(fromBlock, toBlock);
+    return this.logTransferService.execute(logs);
   }
 }

@@ -2,11 +2,11 @@ import { BlockTransferService } from "@/transfer-indexing/application/transfer-i
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
-import { BlockRpcPort } from "@/sync/application/port/block-rpc.port";
 import { RunForwardfillService } from "@/sync/application/run-forwardfill.service";
+import { BlockReader } from "@/sync/domain/protocol/block-reader.protocol";
 
 describe("RunForwardfillService", () => {
-  let blockRpcPort: jest.Mocked<BlockRpcPort>;
+  let blockRpcPort: jest.Mocked<BlockReader>;
   let blockTransferService: jest.Mocked<BlockTransferService>;
   let checkpointService: jest.Mocked<CheckpointService>;
   let runForwardfillService: RunForwardfillService;
@@ -14,7 +14,7 @@ describe("RunForwardfillService", () => {
   beforeEach(() => {
     blockRpcPort = {
       getLatestBlockNumber: jest.fn(),
-    } as unknown as jest.Mocked<BlockRpcPort>;
+    } as unknown as jest.Mocked<BlockReader>;
 
     blockTransferService = {
       execute: jest.fn(),

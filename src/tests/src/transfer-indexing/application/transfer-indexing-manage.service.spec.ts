@@ -1,6 +1,3 @@
-import { TransferEventDecoder } from "@/transfer-indexing/application/decoder/transfer-event.decoder";
-import { LogRpcPort } from "@/transfer-indexing/application/port/log-rpc.port";
-import { TransactionRpcPort } from "@/transfer-indexing/application/port/transaction-rpc.port";
 import {
   BlockRangeTransferService,
   BlockTransferService,
@@ -9,6 +6,9 @@ import {
 import { Log } from "@/transfer-indexing/domain/model/log";
 import { Transaction } from "@/transfer-indexing/domain/model/transaction";
 import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
+import { TransferEventDecoder } from "@/transfer-indexing/domain/protocol/decoder/transfer-event.decoder";
+import { LogReader } from "@/transfer-indexing/domain/protocol/log-reader.protocol";
+import { TransactionReader } from "@/transfer-indexing/domain/protocol/transaction-reader.protocol";
 import { TransactionRepository } from "@/transfer-indexing/domain/repository/transaction.repository";
 import { TransferEventRepository } from "@/transfer-indexing/domain/repository/transfer-event.repository";
 
@@ -66,7 +66,7 @@ describe("TransferIndexingManageService", () => {
   };
 
   describe("BlockTransferService", () => {
-    let logRpcPort: jest.Mocked<LogRpcPort>;
+    let logRpcPort: jest.Mocked<LogReader>;
     let logTransferService: jest.Mocked<LogTransferService>;
     let blockTransferService: BlockTransferService;
 
@@ -115,7 +115,7 @@ describe("TransferIndexingManageService", () => {
   });
 
   describe("BlockRangeTransferService", () => {
-    let logRpcPort: jest.Mocked<LogRpcPort>;
+    let logRpcPort: jest.Mocked<LogReader>;
     let logTransferService: jest.Mocked<LogTransferService>;
     let blockRangeTransferService: BlockRangeTransferService;
 
@@ -185,7 +185,7 @@ describe("TransferIndexingManageService", () => {
 
   describe("LogTransferService", () => {
     let transferEventDecoder: jest.Mocked<TransferEventDecoder>;
-    let transactionRpcPort: jest.Mocked<TransactionRpcPort>;
+    let transactionRpcPort: jest.Mocked<TransactionReader>;
     let transactionRepository: jest.Mocked<TransactionRepository>;
     let transferEventRepository: jest.Mocked<TransferEventRepository>;
     let logTransferService: LogTransferService;
@@ -198,7 +198,7 @@ describe("TransferIndexingManageService", () => {
       transactionRpcPort = {
         getTransaction: jest.fn(),
         getTransactionsByHashes: jest.fn(),
-      } as unknown as jest.Mocked<TransactionRpcPort>;
+      } as unknown as jest.Mocked<TransactionReader>;
 
       transactionRepository = {
         save: jest.fn(),

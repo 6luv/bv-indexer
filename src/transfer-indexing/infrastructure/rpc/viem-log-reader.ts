@@ -1,6 +1,6 @@
 import { publicClient } from "@/shared/viem/public-client";
-import { LogRpcPort } from "@/transfer-indexing/application/port/log-rpc.port";
 import { Log } from "@/transfer-indexing/domain/model/log";
+import { LogReader } from "@/transfer-indexing/domain/protocol/log-reader.protocol";
 import { Injectable } from "@nestjs/common";
 import { parseAbiItem } from "viem";
 
@@ -9,7 +9,7 @@ const transferEvent = parseAbiItem(
 );
 
 @Injectable()
-export class LogRpcClient implements LogRpcPort {
+export class ViemLogReader implements LogReader {
   async getLogsByBlockNumber(blockNumber: bigint): Promise<Log[]> {
     const logs = await publicClient.getLogs({
       fromBlock: blockNumber,

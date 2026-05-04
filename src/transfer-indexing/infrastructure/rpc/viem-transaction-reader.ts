@@ -1,10 +1,10 @@
 import { publicClient } from "@/shared/viem/public-client";
-import { TransactionRpcPort } from "@/transfer-indexing/application/port/transaction-rpc.port";
 import { Transaction } from "@/transfer-indexing/domain/model/transaction";
+import { TransactionReader } from "@/transfer-indexing/domain/protocol/transaction-reader.protocol";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
-export class TransactionRpcClient implements TransactionRpcPort {
+export class ViemTransactionReader implements TransactionReader {
   async getTransactionsByBlockNumber(
     blockNumber: bigint,
   ): Promise<Transaction[]> {

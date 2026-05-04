@@ -1,3 +1,3 @@
-export interface BlockRpcPort {
+export interface BlockReader {
   getLatestBlockNumber(): Promise<bigint>;
 }

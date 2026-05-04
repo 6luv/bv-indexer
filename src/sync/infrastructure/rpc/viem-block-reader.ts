@@ -1,9 +1,9 @@
 import { publicClient } from "@/shared/viem/public-client";
-import { BlockRpcPort } from "@/sync/application/port/block-rpc.port";
+import { BlockReader } from "@/sync/domain/protocol/block-reader.protocol";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
-export class BlockRpcClient implements BlockRpcPort {
+export class ViemBlockReader implements BlockReader {
   async getLatestBlockNumber(): Promise<bigint> {
     return publicClient.getBlockNumber();
   }

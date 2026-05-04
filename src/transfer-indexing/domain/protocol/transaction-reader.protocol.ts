@@ -1,6 +1,6 @@
 import { Transaction } from "@/transfer-indexing/domain/model/transaction";
 
-export interface TransactionRpcPort {
+export interface TransactionReader {
   getTransactionsByBlockNumber(blockNumber: bigint): Promise<Transaction[]>;
   getTransactionsInBlockRange(
     fromBlock: bigint,

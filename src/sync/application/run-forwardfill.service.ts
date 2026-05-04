@@ -1,15 +1,15 @@
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { BlockTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
-import { BlockRpcPort } from "./port/block-rpc.port";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Injectable } from "@nestjs/common";
+import { BlockReader } from "../domain/protocol/block-reader.protocol";
 
 @Injectable()
 export class RunForwardfillService {
   private shouldStop = false;
 
   constructor(
-    private readonly blockRpcPort: BlockRpcPort,
+    private readonly blockReader: BlockReader,
     private readonly blockTransferService: BlockTransferService,
     private readonly checkpointService: CheckpointService,
     private readonly pollingIntervalMs: number = 3000,
@@ -65,7 +65,7 @@ export class RunForwardfillService {
   }
 
   private async getLatestBlockNumber(): Promise<bigint> {
-    return this.blockRpcPort.getLatestBlockNumber();
+    return this.blockReader.getLatestBlockNumber();
   }
 
   private sleep(ms: number): Promise<void> {

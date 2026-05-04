@@ -6,14 +6,14 @@ import {
   LogTransferService,
 } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
-import { TransactionRpcClient } from "@/transfer-indexing/infrastructure/rpc/transaction-rpc-client";
-import { LogRpcClient } from "@/transfer-indexing/infrastructure/rpc/log-rpc-client";
 import { RunBackfillService } from "../application/run-backfill.service";
 import { RunForwardfillService } from "../application/run-forwardfill.service";
-import { BlockRpcClient } from "../infrastructure/rpc/block-rpc-client";
 import { PostgresTransactionRepository } from "@/transfer-indexing/infrastructure/database/postgres-transaction.repository";
 import { PostgresTransferEventRepository } from "@/transfer-indexing/infrastructure/database/postgres-transfer-event.repository";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { ViemBlockReader } from "../infrastructure/rpc/viem-block-reader";
+import { ViemLogReader } from "@/transfer-indexing/infrastructure/rpc/viem-log-reader";
+import { ViemTransactionReader } from "@/transfer-indexing/infrastructure/rpc/viem-transaction-reader";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -29,12 +29,12 @@ export class SyncController {
   constructor(
     @Inject(CheckpointService)
     private readonly checkpointService: CheckpointService,
-    @Inject(BlockRpcClient)
-    private readonly blockRpcClient: BlockRpcClient,
-    @Inject(LogRpcClient)
-    private readonly logRpcClient: LogRpcClient,
-    @Inject(TransactionRpcClient)
-    private readonly transactionRpcClient: TransactionRpcClient,
+    @Inject(ViemBlockReader)
+    private readonly blockReader: ViemBlockReader,
+    @Inject(ViemLogReader)
+    private readonly logRpcClient: ViemLogReader,
+    @Inject(ViemTransactionReader)
+    private readonly transactionRpcClient: ViemTransactionReader,
     @Inject(Erc20TransferEventDecoder)
     private readonly transferEventDecoder: Erc20TransferEventDecoder,
     @Inject(PostgresTransactionRepository)
@@ -53,7 +53,7 @@ export class SyncController {
       await this.checkpointService.getLastProcessedBlockNumber(
         CheckpointType.FORWARDFILL,
       );
-    const latestBlock = await this.blockRpcClient.getLatestBlockNumber();
+    const latestBlock = await this.blockReader.getLatestBlockNumber();
     const savedTransactionCount = await this.transactionRepository.count();
     const savedTransferEventCount = await this.transferEventRepository.count();
 
@@ -211,7 +211,7 @@ export class SyncController {
     );
 
     return new RunForwardfillService(
-      this.blockRpcClient,
+      this.blockReader,
       blockTransferService,
       this.checkpointService,
       pollingIntervalMs,

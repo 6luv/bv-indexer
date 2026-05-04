@@ -1,6 +1,6 @@
-import { TransferEventDecoder } from "@/transfer-indexing/application/decoder/transfer-event.decoder";
 import { Log } from "@/transfer-indexing/domain/model/log";
 import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
+import { TransferEventDecoder } from "@/transfer-indexing/domain/protocol/decoder/transfer-event.decoder";
 import { Injectable } from "@nestjs/common";
 
 @Injectable()
