@@ -114,7 +114,7 @@ export class SyncController {
     const runBackfillService =
       this.createRunBackfillService(targetWalletAddress);
 
-    await runBackfillService.execute(
+    await runBackfillService.runBackfill(
       BigInt(startBlock),
       BigInt(endBlock),
       Number(batchSize),
@@ -148,7 +148,7 @@ export class SyncController {
     this.isForwardfillRunning = true;
 
     runForwardfillService
-      .execute()
+      .runForwardfill()
       .catch((error) => {
         this.lastErrorMessage =
           error instanceof Error ? error.message : "Unknown error";

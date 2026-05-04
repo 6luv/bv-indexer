@@ -32,7 +32,7 @@ describe("RunBackfillService", () => {
     checkpointService.getLastProcessedBlockNumber.mockResolvedValue(null);
 
     // When
-    await runBackfillService.execute(1n, 10n, 3);
+    await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
     expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
@@ -55,7 +55,7 @@ describe("RunBackfillService", () => {
     checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
 
     // When
-    await runBackfillService.execute(1n, 10n, 3);
+    await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
     expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
@@ -76,7 +76,7 @@ describe("RunBackfillService", () => {
     checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
 
     // When
-    await runBackfillService.execute(1n, 10n, 3);
+    await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
     expect(blockBatchProcessor.processAll).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe("RunBackfillService", () => {
 
     // When & Then
     await expect(
-      runBackfillService.execute(startBlock, 10n, 3),
+      runBackfillService.runBackfill(startBlock, 10n, 3),
     ).rejects.toThrow("Block number must be >= 0");
   });
 
@@ -100,9 +100,9 @@ describe("RunBackfillService", () => {
     const endBlock = -1n;
 
     // When & Then
-    await expect(runBackfillService.execute(1n, endBlock, 3)).rejects.toThrow(
-      "Block number must be >= 0",
-    );
+    await expect(
+      runBackfillService.runBackfill(1n, endBlock, 3),
+    ).rejects.toThrow("Block number must be >= 0");
   });
 
   it("startBlock이 endBlock보다 크면 에러가 발생해야 한다.", async () => {
@@ -112,7 +112,7 @@ describe("RunBackfillService", () => {
 
     // When & Then
     await expect(
-      runBackfillService.execute(startBlock, endBlock, 3),
+      runBackfillService.runBackfill(startBlock, endBlock, 3),
     ).rejects.toThrow("startBlock must be less than or equal to endBlock");
   });
 
@@ -122,7 +122,7 @@ describe("RunBackfillService", () => {
 
     // When & Then
     await expect(
-      runBackfillService.execute(1n, 10n, batchSize),
+      runBackfillService.runBackfill(1n, 10n, batchSize),
     ).rejects.toThrow("Batch size must be an integer");
   });
 
@@ -132,7 +132,7 @@ describe("RunBackfillService", () => {
 
     // When & Then
     await expect(
-      runBackfillService.execute(1n, 10n, batchSize),
+      runBackfillService.runBackfill(1n, 10n, batchSize),
     ).rejects.toThrow("Batch size must be greater than 0");
   });
 });

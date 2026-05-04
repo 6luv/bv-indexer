@@ -3,10 +3,12 @@ import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Injectable } from "@nestjs/common";
 import { BackfillValidator } from "../domain/service/backfill-validator.domain.service";
 import { BlockBatchProcessor } from "./block-batch-processor.service";
+import { BackfillDomainService } from "../domain/service/backfill.domain.service";
 
 @Injectable()
 export class RunBackfillService {
   private readonly backfillValidator = new BackfillValidator();
+  private readonly backfillDomainService = new BackfillDomainService();
 
   constructor(
     private readonly checkpointService: CheckpointService,
@@ -14,7 +16,7 @@ export class RunBackfillService {
   ) {}
 
   // 시작 블록부터 종료 블록까지 과거 데이터 백필
-  async execute(
+  async runBackfill(
     startBlock: bigint,
     endBlock: bigint,
     batchSize: number,
@@ -32,25 +34,11 @@ export class RunBackfillService {
 
     if (adjustedStartBlock > endBlock) return;
 
-    const batches = this.createBatches(adjustedStartBlock, endBlock, batchSize);
+    const batches = this.backfillDomainService.createBatches(
+      adjustedStartBlock,
+      endBlock,
+      batchSize,
+    );
     await this.blockBatchProcessor.processAll(batches);
-  }
-
-  // 시작 블록부터 종료 블록까지 batchSize 단위로 분할
-  private createBatches(
-    startBlock: bigint,
-    endBlock: bigint,
-    batchSize: number,
-  ): { fromBlock: bigint; toBlock: bigint }[] {
-    const batches: { fromBlock: bigint; toBlock: bigint }[] = [];
-    const step = BigInt(batchSize);
-
-    for (let fromBlock = startBlock; fromBlock <= endBlock; fromBlock += step) {
-      const toBlock =
-        fromBlock + step - 1n <= endBlock ? fromBlock + step - 1n : endBlock;
-
-      batches.push({ fromBlock, toBlock });
-    }
-    return batches;
   }
 }

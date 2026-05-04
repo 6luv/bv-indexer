@@ -52,7 +52,7 @@ describe("RunForwardfillService", () => {
     });
 
     // When
-    await runForwardfillService.execute();
+    await runForwardfillService.runForwardfill();
 
     // Then
     expect(checkpointService.getLastProcessedBlockNumber).toHaveBeenCalledWith(
@@ -82,7 +82,7 @@ describe("RunForwardfillService", () => {
     });
 
     // When
-    await runForwardfillService.execute();
+    await runForwardfillService.runForwardfill();
 
     // Then
     expect(blockBatchProcessor.processForwardfillBlock).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe("RunForwardfillService", () => {
     });
 
     // When
-    await runForwardfillService.execute();
+    await runForwardfillService.runForwardfill();
 
     // Then
     expect(blockBatchProcessor.processForwardfillBlock).toHaveBeenCalledTimes(

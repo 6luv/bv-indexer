@@ -19,7 +19,7 @@ export class RunForwardfillService {
     this.shouldStop = true;
   }
 
-  async execute(): Promise<void> {
+  async runForwardfill(): Promise<void> {
     this.shouldStop = false;
 
     const checkpoint = await this.checkpointService.getLastProcessedBlockNumber(
