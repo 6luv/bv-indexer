@@ -1,10 +1,5 @@
 import { Controller, Get, Post, Body, Inject } from "@nestjs/common";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
-import {
-  BlockRangeTransferService,
-  BlockTransferService,
-  LogTransferService,
-} from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
 import { RunBackfillService } from "../application/run-backfill.service";
 import { RunForwardfillService } from "../application/run-forwardfill.service";
@@ -15,6 +10,8 @@ import { ViemBlockReader } from "../infrastructure/rpc/viem-block-reader";
 import { ViemLogReader } from "@/transfer-indexing/infrastructure/rpc/viem-log-reader";
 import { ViemTransactionReader } from "@/transfer-indexing/infrastructure/rpc/viem-transaction-reader";
 import { BlockBatchProcessor } from "../application/block-batch-processor.service";
+import { TransferEventIndexerService } from "@/transfer-indexing/application/transfer-event-indexer.service";
+import { TransferEventService } from "@/transfer-indexing/application/transfer-event.service";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -177,26 +174,21 @@ export class SyncController {
   private createRunBackfillService(
     targetWalletAddress: string,
   ): RunBackfillService {
-    const logTransferService = new LogTransferService(
+    const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
       this.transactionRpcClient,
       this.transactionRepository,
       this.transferEventRepository,
       targetWalletAddress,
     );
-    const blockRangeTransferService = new BlockRangeTransferService(
-      this.logRpcClient,
-      logTransferService,
-    );
 
-    const blockTransferService = new BlockTransferService(
+    const transferEventService = new TransferEventService(
       this.logRpcClient,
-      logTransferService,
+      transferEventIndexerService,
     );
 
     const blockBatchProcessor = new BlockBatchProcessor(
-      blockRangeTransferService,
-      blockTransferService,
+      transferEventService,
       this.checkpointService,
     );
 
@@ -207,26 +199,21 @@ export class SyncController {
     targetWalletAddress: string,
     pollingIntervalMs: number,
   ): RunForwardfillService {
-    const logTransferService = new LogTransferService(
+    const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
       this.transactionRpcClient,
       this.transactionRepository,
       this.transferEventRepository,
       targetWalletAddress,
     );
-    const blockTransferService = new BlockTransferService(
-      this.logRpcClient,
-      logTransferService,
-    );
 
-    const blockRangeTransferService = new BlockRangeTransferService(
+    const transferEventService = new TransferEventService(
       this.logRpcClient,
-      logTransferService,
+      transferEventIndexerService,
     );
 
     const blockBatchProcessor = new BlockBatchProcessor(
-      blockRangeTransferService,
-      blockTransferService,
+      transferEventService,
       this.checkpointService,
     );
 

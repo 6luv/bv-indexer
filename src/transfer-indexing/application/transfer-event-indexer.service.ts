@@ -1,16 +1,21 @@
+import { Injectable } from "@nestjs/common";
+import { TransferEventDecoder } from "../domain/protocol/decoder/transfer-event.decoder";
+import { TransactionReader } from "../domain/protocol/transaction-reader.protocol";
 import { TransactionRepository } from "../domain/repository/transaction.repository";
 import { TransferEventRepository } from "../domain/repository/transfer-event.repository";
-import { IndexedTransferResult } from "./types/indexed-transfer-result";
-import { TransferEvent } from "../domain/model/transfer-event";
 import { Log } from "../domain/model/log";
+import { TransferEvent } from "../domain/model/transfer-event";
 import { Transaction } from "../domain/model/transaction";
-import { Injectable } from "@nestjs/common";
-import { LogReader } from "../domain/protocol/log-reader.protocol";
-import { TransactionReader } from "../domain/protocol/transaction-reader.protocol";
-import { TransferEventDecoder } from "../domain/protocol/decoder/transfer-event.decoder";
+
+type IndexedTransferResult = {
+  logCount: number;
+  decodedTransferEventCount: number;
+  indexedTransferEventCount: number;
+  transactionCount: number;
+};
 
 @Injectable()
-export class LogTransferService {
+export class TransferEventIndexerService {
   constructor(
     private readonly transferEventDecoder: TransferEventDecoder,
     private readonly transactionReader: TransactionReader,
@@ -95,39 +100,5 @@ export class LogTransferService {
         await this.transferEventRepository.saveTransferEvent(transferEvent);
       }
     }
-  }
-}
-
-// 블록 하나의 로그를 조회해서 transfer 인덱싱 실행
-@Injectable()
-export class BlockTransferService {
-  constructor(
-    private readonly logReader: LogReader,
-    private readonly logTransferService: LogTransferService,
-  ) {}
-
-  async execute(blockNumber: bigint): Promise<IndexedTransferResult> {
-    const logs = await this.logReader.getLogsByBlockNumber(blockNumber);
-    return this.logTransferService.execute(logs);
-  }
-}
-
-@Injectable()
-export class BlockRangeTransferService {
-  constructor(
-    private readonly logReader: LogReader,
-    private readonly logTransferService: LogTransferService,
-  ) {}
-
-  async execute(
-    fromBlock: bigint,
-    toBlock: bigint,
-  ): Promise<IndexedTransferResult> {
-    if (fromBlock > toBlock) {
-      throw new Error("fromBlock must be less than or equal to toBlock");
-    }
-
-    const logs = await this.logReader.getLogsInBlockRange(fromBlock, toBlock);
-    return this.logTransferService.execute(logs);
   }
 }
