@@ -3,9 +3,12 @@ import { BackfillBatch } from "./types/backfill-batch";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Injectable } from "@nestjs/common";
+import { BackfillValidator } from "../domain/service/backfill-validator.domain.service";
 
 @Injectable()
 export class RunBackfillService {
+  private readonly backfillValidator = new BackfillValidator();
+
   constructor(
     private readonly blockRangeTransferService: BlockRangeTransferService,
     private readonly checkpointService: CheckpointService,
@@ -17,8 +20,7 @@ export class RunBackfillService {
     endBlock: bigint,
     batchSize: number,
   ): Promise<void> {
-    this.validateBlockRange(startBlock, endBlock);
-    this.validateBatchSize(batchSize);
+    this.backfillValidator.validate(startBlock, endBlock, batchSize);
 
     const checkpoint = await this.checkpointService.getLastProcessedBlockNumber(
       CheckpointType.BACKFILL,
@@ -33,21 +35,6 @@ export class RunBackfillService {
 
     const batches = this.createBatches(adjustedStartBlock, endBlock, batchSize);
     await this.processBatches(batches);
-  }
-
-  // 시작 블록 > 종료 블록 검증
-  private validateBlockRange(startBlock: bigint, endBlock: bigint): void {
-    if (startBlock < 0n || endBlock < 0n)
-      throw new Error("Block number must be >= 0");
-    if (startBlock > endBlock)
-      throw new Error("startBlock must be less than or equal to endBlock");
-  }
-
-  // batchSize 검증
-  private validateBatchSize(batchSize: number): void {
-    if (!Number.isInteger(batchSize))
-      throw new Error("Batch size must be an integer");
-    if (batchSize <= 0) throw new Error("Batch size must be greater than 0");
   }
 
   // 시작 블록부터 종료 블록까지 batchSize 단위로 분할
