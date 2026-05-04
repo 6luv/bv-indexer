@@ -1,4 +1,4 @@
-import { TransferEvent } from "./transfer-event";
+import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
 
 describe("TransferEvent", () => {
   const now = Math.floor(Date.now() / 1000);

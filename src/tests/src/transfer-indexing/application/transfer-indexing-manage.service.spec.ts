@@ -1,16 +1,16 @@
-import { Log } from "../domain/model/log";
-import { Transaction } from "../domain/model/transaction";
-import { TransferEvent } from "../domain/model/transfer-event";
-import { TransactionRepository } from "../domain/repository/transaction.repository";
-import { TransferEventRepository } from "../domain/repository/transfer-event.repository";
-import { TransferEventDecoder } from "./decoder/transfer-event.decoder";
-import { LogRpcPort } from "./port/log-rpc.port";
-import { TransactionRpcPort } from "./port/transaction-rpc.port";
+import { TransferEventDecoder } from "@/transfer-indexing/application/decoder/transfer-event.decoder";
+import { LogRpcPort } from "@/transfer-indexing/application/port/log-rpc.port";
+import { TransactionRpcPort } from "@/transfer-indexing/application/port/transaction-rpc.port";
 import {
   BlockRangeTransferService,
   BlockTransferService,
   LogTransferService,
-} from "./transfer-indexing-manage.service";
+} from "@/transfer-indexing/application/transfer-indexing-manage.service";
+import { Log } from "@/transfer-indexing/domain/model/log";
+import { Transaction } from "@/transfer-indexing/domain/model/transaction";
+import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
+import { TransactionRepository } from "@/transfer-indexing/domain/repository/transaction.repository";
+import { TransferEventRepository } from "@/transfer-indexing/domain/repository/transfer-event.repository";
 
 describe("TransferIndexingManageService", () => {
   const targetWalletAddress = "0x" + "1".repeat(40);

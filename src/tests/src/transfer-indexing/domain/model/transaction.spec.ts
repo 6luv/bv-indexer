@@ -1,4 +1,4 @@
-import { Transaction } from "./transaction";
+import { Transaction } from "@/transfer-indexing/domain/model/transaction";
 
 describe("Transaction", () => {
   const now = Math.floor(Date.now() / 1000);

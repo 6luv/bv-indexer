@@ -1,9 +1,9 @@
 import { BlockTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
-import { BlockRpcPort } from "./port/block-rpc.port";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
-import { RunForwardfillService } from "./run-forwardfill.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
+import { BlockRpcPort } from "@/sync/application/port/block-rpc.port";
+import { RunForwardfillService } from "@/sync/application/run-forwardfill.service";
 
 describe("RunForwardfillService", () => {
   let blockRpcPort: jest.Mocked<BlockRpcPort>;

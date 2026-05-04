@@ -1,7 +1,7 @@
+import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
+import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
+import { CheckpointRepository } from "@/checkpoint/domain/repository/checkpoint.repository";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
-import { Checkpoint } from "../domain/model/checkpoint";
-import { CheckpointRepository } from "../domain/repository/checkpoint.repository";
-import { CheckpointService } from "./checkpoint.service";
 
 describe("CheckpointService", () => {
   let checkpointRepository: jest.Mocked<CheckpointRepository>;

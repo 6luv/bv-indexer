@@ -1,4 +1,4 @@
-import { Log } from "./log";
+import { Log } from "@/transfer-indexing/domain/model/log";
 
 describe("Log", () => {
   const now = Math.floor(Date.now() / 1000);

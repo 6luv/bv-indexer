@@ -1,5 +1,5 @@
 import { Log } from "@/transfer-indexing/domain/model/log";
-import { Erc20TransferEventDecoder } from "./erc20-transfer-event.decoder";
+import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
 
 describe("Erc20TransferEventDecoder", () => {
   const decoder = new Erc20TransferEventDecoder();

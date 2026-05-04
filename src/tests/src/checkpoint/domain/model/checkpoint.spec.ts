@@ -1,5 +1,5 @@
+import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
-import { Checkpoint } from "./checkpoint";
 
 describe("Checkpoint", () => {
   const now = Math.floor(Date.now() / 1000);
