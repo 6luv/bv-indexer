@@ -2,7 +2,9 @@ import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { BlockTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { BlockRpcPort } from "./port/block-rpc.port";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class RunForwardfillService {
   private shouldStop = false;
 

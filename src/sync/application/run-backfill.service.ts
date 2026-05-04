@@ -2,7 +2,9 @@ import { BlockRangeTransferService } from "@/transfer-indexing/application/trans
 import { BackfillBatch } from "./types/backfill-batch";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class RunBackfillService {
   constructor(
     private readonly blockRangeTransferService: BlockRangeTransferService,

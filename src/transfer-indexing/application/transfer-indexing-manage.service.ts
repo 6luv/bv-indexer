@@ -7,8 +7,10 @@ import { Log } from "../domain/model/log";
 import { Transaction } from "../domain/model/transaction";
 import { LogRpcPort } from "./port/log-rpc.port";
 import { TransactionRpcPort } from "./port/transaction-rpc.port";
+import { Injectable } from "@nestjs/common";
 
 // 블록 하나의 로그를 조회해서 transfer 인덱싱 실행
+@Injectable()
 export class BlockTransferService {
   constructor(
     private readonly logRpcPort: LogRpcPort,
@@ -21,6 +23,7 @@ export class BlockTransferService {
   }
 }
 
+@Injectable()
 export class BlockRangeTransferService {
   constructor(
     private readonly logRpcPort: LogRpcPort,
@@ -40,6 +43,7 @@ export class BlockRangeTransferService {
   }
 }
 
+@Injectable()
 export class LogTransferService {
   constructor(
     private readonly transferEventDecoder: TransferEventDecoder,

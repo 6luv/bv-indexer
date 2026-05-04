@@ -1,9 +1,14 @@
 import { CheckpointRepository } from "../domain/repository/checkpoint.repository";
 import { Checkpoint } from "../domain/model/checkpoint";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { Inject, Injectable } from "@nestjs/common";
 
+@Injectable()
 export class CheckpointService {
-  constructor(private readonly checkpointRepository: CheckpointRepository) {}
+  constructor(
+    @Inject("CheckpointRepository")
+    private readonly checkpointRepository: CheckpointRepository,
+  ) {}
 
   async getLastProcessedBlockNumber(
     type: CheckpointType,

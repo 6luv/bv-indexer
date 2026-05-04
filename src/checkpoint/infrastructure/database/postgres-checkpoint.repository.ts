@@ -1,6 +1,7 @@
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { prisma } from "@/shared/database/prisma-client";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
+import { Injectable } from "@nestjs/common";
 import { CheckpointType as PrismaCheckpointType } from "@prisma/client";
 
 function toPrismaType(type: CheckpointType): PrismaCheckpointType {
@@ -9,6 +10,7 @@ function toPrismaType(type: CheckpointType): PrismaCheckpointType {
     : PrismaCheckpointType.FORWARDFILL;
 }
 
+@Injectable()
 export class PostgresCheckpointRepository {
   async findByType(type: CheckpointType): Promise<Checkpoint | null> {
     const row = await prisma.checkpoint.findUnique({

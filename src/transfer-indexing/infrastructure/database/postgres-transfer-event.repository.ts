@@ -1,7 +1,9 @@
 import { prisma } from "@/shared/database/prisma-client";
 import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
 import { TransferEventRepository } from "@/transfer-indexing/domain/repository/transfer-event.repository";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class PostgresTransferEventRepository implements TransferEventRepository {
   async saveTransferEvent(transferEvent: TransferEvent): Promise<void> {
     await prisma.transferEvent.upsert({

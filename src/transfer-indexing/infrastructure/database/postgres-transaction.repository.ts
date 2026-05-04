@@ -1,7 +1,9 @@
 import { prisma } from "@/shared/database/prisma-client";
 import { Transaction } from "@/transfer-indexing/domain/model/transaction";
 import { TransactionRepository } from "@/transfer-indexing/domain/repository/transaction.repository";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class PostgresTransactionRepository implements TransactionRepository {
   async saveTransaction(transaction: Transaction): Promise<void> {
     await prisma.transaction.upsert({

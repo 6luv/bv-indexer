@@ -1,7 +1,9 @@
 import { publicClient } from "@/shared/viem/public-client";
 import { TransactionRpcPort } from "@/transfer-indexing/application/port/transaction-rpc.port";
 import { Transaction } from "@/transfer-indexing/domain/model/transaction";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class TransactionRpcClient implements TransactionRpcPort {
   async getTransactionsByBlockNumber(
     blockNumber: bigint,

@@ -1,12 +1,14 @@
 import { publicClient } from "@/shared/viem/public-client";
 import { LogRpcPort } from "@/transfer-indexing/application/port/log-rpc.port";
 import { Log } from "@/transfer-indexing/domain/model/log";
+import { Injectable } from "@nestjs/common";
 import { parseAbiItem } from "viem";
 
 const transferEvent = parseAbiItem(
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 );
 
+@Injectable()
 export class LogRpcClient implements LogRpcPort {
   async getLogsByBlockNumber(blockNumber: bigint): Promise<Log[]> {
     const logs = await publicClient.getLogs({

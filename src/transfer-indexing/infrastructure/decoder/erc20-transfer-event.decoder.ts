@@ -1,7 +1,9 @@
 import { TransferEventDecoder } from "@/transfer-indexing/application/decoder/transfer-event.decoder";
 import { Log } from "@/transfer-indexing/domain/model/log";
 import { TransferEvent } from "@/transfer-indexing/domain/model/transfer-event";
+import { Injectable } from "@nestjs/common";
 
+@Injectable()
 export class Erc20TransferEventDecoder implements TransferEventDecoder {
   public static readonly TRANSFER_EVENT_TOPIC =
     "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
