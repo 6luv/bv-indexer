@@ -1,14 +1,14 @@
-import { BlockTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { RunForwardfillService } from "@/sync/application/run-forwardfill.service";
 import { BlockReader } from "@/sync/domain/protocol/block-reader.protocol";
 import { BlockBatchProcessor } from "@/sync/application/block-batch-processor.service";
+import { TransferEventService } from "@/transfer-indexing/application/transfer-event.service";
 
 describe("RunForwardfillService", () => {
   let blockReader: jest.Mocked<BlockReader>;
-  let blockTransferService: jest.Mocked<BlockTransferService>;
+  let transferEventService: jest.Mocked<TransferEventService>;
   let checkpointService: jest.Mocked<CheckpointService>;
   let runForwardfillService: RunForwardfillService;
   let blockBatchProcessor: jest.Mocked<BlockBatchProcessor>;
@@ -18,9 +18,10 @@ describe("RunForwardfillService", () => {
       getLatestBlockNumber: jest.fn(),
     } as unknown as jest.Mocked<BlockReader>;
 
-    blockTransferService = {
-      execute: jest.fn(),
-    } as unknown as jest.Mocked<BlockTransferService>;
+    transferEventService = {
+      indexByBlockRange: jest.fn(),
+      indexByBlockNumber: jest.fn(),
+    } as unknown as jest.Mocked<TransferEventService>;
 
     checkpointService = {
       getLastProcessedBlockNumber: jest.fn(),

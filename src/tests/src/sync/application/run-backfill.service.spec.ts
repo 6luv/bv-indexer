@@ -1,5 +1,4 @@
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
-import { BlockRangeTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Checkpoint } from "@/checkpoint/domain/model/checkpoint";
 import { RunBackfillService } from "@/sync/application/run-backfill.service";
