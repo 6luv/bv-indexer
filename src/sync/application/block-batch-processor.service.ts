@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { BlockRangeTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
+import {
+  BlockRangeTransferService,
+  BlockTransferService,
+} from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 
@@ -12,6 +15,7 @@ type BackfillBatch = {
 export class BlockBatchProcessor {
   constructor(
     private readonly blockRangeTransferService: BlockRangeTransferService,
+    private readonly blockTransferService: BlockTransferService,
     private readonly checkpointService: CheckpointService,
   ) {}
 
@@ -38,6 +42,20 @@ export class BlockBatchProcessor {
     await this.checkpointService.updateLastProcessedBlockNumber(
       toBlock,
       CheckpointType.BACKFILL,
+    );
+  }
+
+  // 블록 하나를 처리
+  async processForwardfillBlock(blockNumber: bigint): Promise<void> {
+    const result = await this.blockTransferService.execute(blockNumber);
+
+    console.log(
+      `[BlockBatchProcessor] indexed forwardfill transfer events: ${result.indexedTransferEventCount}`,
+    );
+
+    await this.checkpointService.updateLastProcessedBlockNumber(
+      blockNumber,
+      CheckpointType.FORWARDFILL,
     );
   }
 }

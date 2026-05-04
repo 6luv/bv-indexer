@@ -1,8 +1,8 @@
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
-import { BlockTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Injectable } from "@nestjs/common";
 import { BlockReader } from "../domain/protocol/block-reader.protocol";
+import { BlockBatchProcessor } from "./block-batch-processor.service";
 
 @Injectable()
 export class RunForwardfillService {
@@ -10,9 +10,9 @@ export class RunForwardfillService {
 
   constructor(
     private readonly blockReader: BlockReader,
-    private readonly blockTransferService: BlockTransferService,
     private readonly checkpointService: CheckpointService,
     private readonly pollingIntervalMs: number = 3000,
+    private readonly blockBatchProcessor: BlockBatchProcessor,
   ) {}
 
   public stop(): void {
@@ -38,7 +38,7 @@ export class RunForwardfillService {
       const latestBlockNumber = await this.getLatestBlockNumber();
 
       while (nextBlockNumber <= latestBlockNumber && !this.shouldStop) {
-        await this.processBlock(nextBlockNumber);
+        await this.blockBatchProcessor.processForwardfillBlock(nextBlockNumber);
         nextBlockNumber += 1n;
       }
 
@@ -46,18 +46,6 @@ export class RunForwardfillService {
 
       await this.sleep(this.pollingIntervalMs);
     }
-  }
-
-  private async processBlock(blockNumber: bigint): Promise<void> {
-    const result = await this.blockTransferService.execute(blockNumber);
-    console.log(
-      `[ForwardfillService] indexed transfer events: ${result.indexedTransferEventCount}`,
-    );
-
-    await this.checkpointService.updateLastProcessedBlockNumber(
-      blockNumber,
-      CheckpointType.FORWARDFILL,
-    );
   }
 
   private async getInitialBlockNumber(): Promise<bigint> {

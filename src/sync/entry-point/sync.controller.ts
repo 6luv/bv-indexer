@@ -189,8 +189,14 @@ export class SyncController {
       logTransferService,
     );
 
+    const blockTransferService = new BlockTransferService(
+      this.logRpcClient,
+      logTransferService,
+    );
+
     const blockBatchProcessor = new BlockBatchProcessor(
       blockRangeTransferService,
+      blockTransferService,
       this.checkpointService,
     );
 
@@ -213,11 +219,22 @@ export class SyncController {
       logTransferService,
     );
 
-    return new RunForwardfillService(
-      this.blockReader,
+    const blockRangeTransferService = new BlockRangeTransferService(
+      this.logRpcClient,
+      logTransferService,
+    );
+
+    const blockBatchProcessor = new BlockBatchProcessor(
+      blockRangeTransferService,
       blockTransferService,
       this.checkpointService,
+    );
+
+    return new RunForwardfillService(
+      this.blockReader,
+      this.checkpointService,
       pollingIntervalMs,
+      blockBatchProcessor,
     );
   }
 }
