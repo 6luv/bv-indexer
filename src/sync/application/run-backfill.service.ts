@@ -1,17 +1,16 @@
-import { BlockRangeTransferService } from "@/transfer-indexing/application/transfer-indexing-manage.service";
-import { BackfillBatch } from "./types/backfill-batch";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { Injectable } from "@nestjs/common";
 import { BackfillValidator } from "../domain/service/backfill-validator.domain.service";
+import { BlockBatchProcessor } from "./block-batch-processor.service";
 
 @Injectable()
 export class RunBackfillService {
   private readonly backfillValidator = new BackfillValidator();
 
   constructor(
-    private readonly blockRangeTransferService: BlockRangeTransferService,
     private readonly checkpointService: CheckpointService,
+    private readonly blockBatchProcessor: BlockBatchProcessor,
   ) {}
 
   // 시작 블록부터 종료 블록까지 과거 데이터 백필
@@ -34,7 +33,7 @@ export class RunBackfillService {
     if (adjustedStartBlock > endBlock) return;
 
     const batches = this.createBatches(adjustedStartBlock, endBlock, batchSize);
-    await this.processBatches(batches);
+    await this.blockBatchProcessor.processAll(batches);
   }
 
   // 시작 블록부터 종료 블록까지 batchSize 단위로 분할
@@ -42,8 +41,8 @@ export class RunBackfillService {
     startBlock: bigint,
     endBlock: bigint,
     batchSize: number,
-  ): BackfillBatch[] {
-    const batches: BackfillBatch[] = [];
+  ): { fromBlock: bigint; toBlock: bigint }[] {
+    const batches: { fromBlock: bigint; toBlock: bigint }[] = [];
     const step = BigInt(batchSize);
 
     for (let fromBlock = startBlock; fromBlock <= endBlock; fromBlock += step) {
@@ -53,31 +52,5 @@ export class RunBackfillService {
       batches.push({ fromBlock, toBlock });
     }
     return batches;
-  }
-
-  // 생성된 배치 목록을 순차적으로 처리
-  private async processBatches(batches: BackfillBatch[]): Promise<void> {
-    for (const batch of batches) {
-      await this.processBatch(batch);
-    }
-  }
-
-  // 하나의 배치 범위를 기준으로 백필 수행
-  private async processBatch(batch: BackfillBatch): Promise<void> {
-    const { fromBlock, toBlock } = batch;
-
-    const result = await this.blockRangeTransferService.execute(
-      fromBlock,
-      toBlock,
-    );
-    console.log(
-      `[BackfillService] indexed transfer events: ${result.indexedTransferEventCount}`,
-    );
-
-    // 체크포인트 갱신
-    await this.checkpointService.updateLastProcessedBlockNumber(
-      toBlock,
-      CheckpointType.BACKFILL,
-    );
   }
 }

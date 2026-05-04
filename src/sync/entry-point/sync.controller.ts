@@ -14,6 +14,7 @@ import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { ViemBlockReader } from "../infrastructure/rpc/viem-block-reader";
 import { ViemLogReader } from "@/transfer-indexing/infrastructure/rpc/viem-log-reader";
 import { ViemTransactionReader } from "@/transfer-indexing/infrastructure/rpc/viem-transaction-reader";
+import { BlockBatchProcessor } from "../application/block-batch-processor.service";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -188,10 +189,12 @@ export class SyncController {
       logTransferService,
     );
 
-    return new RunBackfillService(
+    const blockBatchProcessor = new BlockBatchProcessor(
       blockRangeTransferService,
       this.checkpointService,
     );
+
+    return new RunBackfillService(this.checkpointService, blockBatchProcessor);
   }
 
   private createRunForwardfillService(
