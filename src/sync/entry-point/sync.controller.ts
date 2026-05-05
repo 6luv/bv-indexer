@@ -6,12 +6,12 @@ import { RunForwardfillService } from "../application/run-forwardfill.service";
 import { PostgresTransactionRepository } from "@/transfer-indexing/infrastructure/database/postgres-transaction.repository";
 import { PostgresTransferEventRepository } from "@/transfer-indexing/infrastructure/database/postgres-transfer-event.repository";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
-import { ViemBlockReader } from "../infrastructure/rpc/viem-block-reader";
-import { ViemLogReader } from "@/transfer-indexing/infrastructure/rpc/viem-log-reader";
-import { ViemTransactionReader } from "@/transfer-indexing/infrastructure/rpc/viem-transaction-reader";
 import { BlockBatchProcessor } from "../application/block-batch-processor.service";
 import { TransferEventIndexerService } from "@/transfer-indexing/application/transfer-event-indexer.service";
 import { TransferEventService } from "@/transfer-indexing/application/transfer-event.service";
+import { BlockchainBlockReader } from "../infrastructure/rpc/blockchain-block-reader";
+import { BlockchainLogReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-log-reader";
+import { BlockchainTransactionReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-transaction-reader";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -27,12 +27,12 @@ export class SyncController {
   constructor(
     @Inject(CheckpointService)
     private readonly checkpointService: CheckpointService,
-    @Inject(ViemBlockReader)
-    private readonly blockReader: ViemBlockReader,
-    @Inject(ViemLogReader)
-    private readonly logRpcClient: ViemLogReader,
-    @Inject(ViemTransactionReader)
-    private readonly transactionRpcClient: ViemTransactionReader,
+    @Inject(BlockchainBlockReader)
+    private readonly blockchainBlockReader: BlockchainBlockReader,
+    @Inject(BlockchainLogReader)
+    private readonly blockchainLogReader: BlockchainLogReader,
+    @Inject(BlockchainTransactionReader)
+    private readonly blockchainTransactionReader: BlockchainTransactionReader,
     @Inject(Erc20TransferEventDecoder)
     private readonly transferEventDecoder: Erc20TransferEventDecoder,
     @Inject(PostgresTransactionRepository)
@@ -51,7 +51,7 @@ export class SyncController {
       await this.checkpointService.getLastProcessedBlockNumber(
         CheckpointType.FORWARDFILL,
       );
-    const latestBlock = await this.blockReader.getLatestBlockNumber();
+    const latestBlock = await this.blockchainBlockReader.getLatestBlockNumber();
     const savedTransactionCount = await this.transactionRepository.count();
     const savedTransferEventCount = await this.transferEventRepository.count();
 
@@ -176,14 +176,14 @@ export class SyncController {
   ): RunBackfillService {
     const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
-      this.transactionRpcClient,
+      this.blockchainTransactionReader,
       this.transactionRepository,
       this.transferEventRepository,
       targetWalletAddress,
     );
 
     const transferEventService = new TransferEventService(
-      this.logRpcClient,
+      this.blockchainLogReader,
       transferEventIndexerService,
     );
 
@@ -201,14 +201,14 @@ export class SyncController {
   ): RunForwardfillService {
     const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
-      this.transactionRpcClient,
+      this.blockchainTransactionReader,
       this.transactionRepository,
       this.transferEventRepository,
       targetWalletAddress,
     );
 
     const transferEventService = new TransferEventService(
-      this.logRpcClient,
+      this.blockchainLogReader,
       transferEventIndexerService,
     );
 
@@ -218,7 +218,7 @@ export class SyncController {
     );
 
     return new RunForwardfillService(
-      this.blockReader,
+      this.blockchainBlockReader,
       this.checkpointService,
       pollingIntervalMs,
       blockBatchProcessor,
