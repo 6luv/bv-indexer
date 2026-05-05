@@ -32,7 +32,7 @@ describe("TransferEventService", () => {
     };
 
     transferEventIndexerService = {
-      execute: jest.fn(),
+      indexFromLogs: jest.fn(),
     } as unknown as jest.Mocked<TransferEventIndexerService>;
 
     transferEventService = new TransferEventService(
@@ -47,7 +47,7 @@ describe("TransferEventService", () => {
     const logs = [createLog()];
 
     logReader.getLogsByBlockNumber.mockResolvedValue(logs);
-    transferEventIndexerService.execute.mockResolvedValue({
+    transferEventIndexerService.indexFromLogs.mockResolvedValue({
       logCount: 1,
       decodedTransferEventCount: 1,
       indexedTransferEventCount: 1,
@@ -59,7 +59,10 @@ describe("TransferEventService", () => {
 
     // Then
     expect(logReader.getLogsByBlockNumber).toHaveBeenCalledWith(blockNumber);
-    expect(transferEventIndexerService.execute).toHaveBeenCalledWith(logs);
+    expect(transferEventIndexerService.indexFromLogs).toHaveBeenCalledWith(
+      logs,
+    );
+
     expect(result).toEqual({
       logCount: 1,
       decodedTransferEventCount: 1,
@@ -75,7 +78,7 @@ describe("TransferEventService", () => {
     const logs = [createLog()];
 
     logReader.getLogsInBlockRange.mockResolvedValue(logs);
-    transferEventIndexerService.execute.mockResolvedValue({
+    transferEventIndexerService.indexFromLogs.mockResolvedValue({
       logCount: 1,
       decodedTransferEventCount: 1,
       indexedTransferEventCount: 1,
@@ -93,7 +96,10 @@ describe("TransferEventService", () => {
       fromBlock,
       toBlock,
     );
-    expect(transferEventIndexerService.execute).toHaveBeenCalledWith(logs);
+    expect(transferEventIndexerService.indexFromLogs).toHaveBeenCalledWith(
+      logs,
+    );
+
     expect(result).toEqual({
       logCount: 1,
       decodedTransferEventCount: 1,
@@ -113,6 +119,6 @@ describe("TransferEventService", () => {
     ).rejects.toThrow("fromBlock must be less than or equal to toBlock");
 
     expect(logReader.getLogsInBlockRange).not.toHaveBeenCalled();
-    expect(transferEventIndexerService.execute).not.toHaveBeenCalled();
+    expect(transferEventIndexerService.indexFromLogs).not.toHaveBeenCalled();
   });
 });
