@@ -17,13 +17,15 @@ export class TransferEventService {
     private readonly transferEventIndexerService: TransferEventIndexerService,
   ) {}
 
+  // 블록 하나의 로그를 조회해서 Transfer 이벤트 인덱싱을 실행
   async indexByBlockNumber(
     blockNumber: bigint,
   ): Promise<IndexedTransferResult> {
     const logs = await this.logReader.getLogsByBlockNumber(blockNumber);
-    return this.transferEventIndexerService.execute(logs);
+    return this.transferEventIndexerService.indexFromLogs(logs);
   }
 
+  // 블록 범위의 로그를 조회해서 Transfer 이벤트 인덱싱을 실행
   async indexByBlockRange(
     fromBlock: bigint,
     toBlock: bigint,
@@ -33,6 +35,6 @@ export class TransferEventService {
     }
 
     const logs = await this.logReader.getLogsInBlockRange(fromBlock, toBlock);
-    return this.transferEventIndexerService.execute(logs);
+    return this.transferEventIndexerService.indexFromLogs(logs);
   }
 }

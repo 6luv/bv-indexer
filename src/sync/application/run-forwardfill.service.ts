@@ -26,16 +26,16 @@ export class RunForwardfillService {
       CheckpointType.FORWARDFILL,
     );
 
-    let nextBlockNumber = checkpoint
+    const nextBlockNumber = checkpoint
       ? checkpoint.getLastProcessedBlock() + 1n
-      : await this.getInitialBlockNumber();
+      : await this.blockReader.getLatestBlockNumber();
 
     await this.startForwardfillLoop(nextBlockNumber);
   }
 
   private async startForwardfillLoop(nextBlockNumber: bigint): Promise<void> {
     while (!this.shouldStop) {
-      const latestBlockNumber = await this.getLatestBlockNumber();
+      const latestBlockNumber = await this.blockReader.getLatestBlockNumber();
 
       while (nextBlockNumber <= latestBlockNumber && !this.shouldStop) {
         await this.blockBatchProcessor.processForwardfillBlock(nextBlockNumber);
@@ -44,19 +44,9 @@ export class RunForwardfillService {
 
       if (this.shouldStop) break;
 
-      await this.sleep(this.pollingIntervalMs);
+      await new Promise((resolve) =>
+        setTimeout(resolve, this.pollingIntervalMs),
+      );
     }
-  }
-
-  private async getInitialBlockNumber(): Promise<bigint> {
-    return this.getLatestBlockNumber();
-  }
-
-  private async getLatestBlockNumber(): Promise<bigint> {
-    return this.blockReader.getLatestBlockNumber();
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

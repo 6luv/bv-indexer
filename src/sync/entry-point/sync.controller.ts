@@ -12,6 +12,7 @@ import { TransferEventService } from "@/transfer-indexing/application/transfer-e
 import { BlockchainBlockReader } from "../infrastructure/rpc/blockchain-block-reader";
 import { BlockchainLogReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-log-reader";
 import { BlockchainTransactionReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-transaction-reader";
+import { TransferEventSaveService } from "@/transfer-indexing/application/transfer-event-save.service";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -174,11 +175,15 @@ export class SyncController {
   private createRunBackfillService(
     targetWalletAddress: string,
   ): RunBackfillService {
+    const transferEventSaveService = new TransferEventSaveService(
+      this.transactionRepository,
+      this.transferEventRepository,
+    );
+
     const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
       this.blockchainTransactionReader,
-      this.transactionRepository,
-      this.transferEventRepository,
+      transferEventSaveService,
       targetWalletAddress,
     );
 
@@ -199,11 +204,15 @@ export class SyncController {
     targetWalletAddress: string,
     pollingIntervalMs: number,
   ): RunForwardfillService {
+    const transferEventSaveService = new TransferEventSaveService(
+      this.transactionRepository,
+      this.transferEventRepository,
+    );
+
     const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
       this.blockchainTransactionReader,
-      this.transactionRepository,
-      this.transferEventRepository,
+      transferEventSaveService,
       targetWalletAddress,
     );
 

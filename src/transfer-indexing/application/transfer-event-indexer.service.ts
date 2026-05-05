@@ -1,11 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { TransferEventDecoder } from "../domain/protocol/decoder/transfer-event.decoder";
 import { TransactionReader } from "../domain/protocol/transaction-reader.protocol";
-import { TransactionRepository } from "../domain/repository/transaction.repository";
-import { TransferEventRepository } from "../domain/repository/transfer-event.repository";
 import { Log } from "../domain/model/log";
 import { TransferEvent } from "../domain/model/transfer-event";
-import { Transaction } from "../domain/model/transaction";
+import { TransferEventSaveService } from "./transfer-event-save.service";
 
 type IndexedTransferResult = {
   logCount: number;
@@ -19,12 +17,12 @@ export class TransferEventIndexerService {
   constructor(
     private readonly transferEventDecoder: TransferEventDecoder,
     private readonly transactionReader: TransactionReader,
-    private readonly transactionRepository: TransactionRepository,
-    private readonly transferEventRepository: TransferEventRepository,
+    private readonly transferEventSaveService: TransferEventSaveService,
     private readonly targetWalletAddress: string,
   ) {}
 
-  async execute(logs: Log[]): Promise<IndexedTransferResult> {
+  // 로그 목록을 Transfer 이벤트로 인덱싱한다.
+  async indexFromLogs(logs: Log[]): Promise<IndexedTransferResult> {
     const transferEvents = await this.decodeTransferEvents(logs);
     const indexedTransferEvents = this.filterByTargetWallet(transferEvents);
     const txHashes = this.getUniqueTransactionHashes(indexedTransferEvents);
@@ -32,8 +30,10 @@ export class TransferEventIndexerService {
     const transactions =
       await this.transactionReader.getTransactionsByHashes(txHashes);
 
-    await this.saveTransactionsIfAbsent(transactions);
-    await this.saveTransferEventsIfAbsent(indexedTransferEvents);
+    await this.transferEventSaveService.saveTransactionsIfAbsent(transactions);
+    await this.transferEventSaveService.saveTransferEventsIfAbsent(
+      indexedTransferEvents,
+    );
 
     return {
       logCount: logs.length,
@@ -43,20 +43,22 @@ export class TransferEventIndexerService {
     };
   }
 
-  private async decodeTransferEvents(logs: Log[]): Promise<TransferEvent[]> {
+  // 로그 목록을 TransferEvent 도메인 객체 목록으로 변환한다.
+  async decodeTransferEvents(logs: Log[]): Promise<TransferEvent[]> {
     const transferEvents: TransferEvent[] = [];
 
     for (const log of logs) {
       const decoded = await this.transferEventDecoder.decode(log);
-      if (decoded) transferEvents.push(decoded);
+      if (decoded) {
+        transferEvents.push(decoded);
+      }
     }
 
     return transferEvents;
   }
 
-  private filterByTargetWallet(
-    transferEvents: TransferEvent[],
-  ): TransferEvent[] {
+  // 대상 지갑 주소가 from 또는 to에 포함된 Transfer 이벤트만 필터링한다.
+  filterByTargetWallet(transferEvents: TransferEvent[]): TransferEvent[] {
     const normalizedTarget = this.targetWalletAddress.toLowerCase();
 
     return transferEvents.filter(
@@ -66,39 +68,10 @@ export class TransferEventIndexerService {
     );
   }
 
-  private getUniqueTransactionHashes(
-    transferEvents: TransferEvent[],
-  ): string[] {
+  // 중복 없이 트랜잭션 해시 목록을 추출한다.
+  getUniqueTransactionHashes(transferEvents: TransferEvent[]): string[] {
     return [
       ...new Set(transferEvents.map((event) => event.getTransactionHash())),
     ];
-  }
-
-  private async saveTransactionsIfAbsent(
-    transactions: Transaction[],
-  ): Promise<void> {
-    for (const transaction of transactions) {
-      const exists = await this.transactionRepository.existsByHash(
-        transaction.getHash(),
-      );
-      if (!exists)
-        await this.transactionRepository.saveTransaction(transaction);
-    }
-  }
-
-  private async saveTransferEventsIfAbsent(
-    transferEvents: TransferEvent[],
-  ): Promise<void> {
-    for (const transferEvent of transferEvents) {
-      const exists =
-        await this.transferEventRepository.existsByTransactionHashAndLogIndex(
-          transferEvent.getTransactionHash(),
-          transferEvent.getLogIndex(),
-        );
-
-      if (!exists) {
-        await this.transferEventRepository.saveTransferEvent(transferEvent);
-      }
-    }
   }
 }
