@@ -3,16 +3,31 @@ import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
 import { RunBackfillService } from "../application/run-backfill.service";
 import { RunForwardfillService } from "../application/run-forwardfill.service";
-import { PostgresTransactionRepository } from "@/transfer-indexing/infrastructure/database/postgres-transaction.repository";
-import { PostgresTransferEventRepository } from "@/transfer-indexing/infrastructure/database/postgres-transfer-event.repository";
 import { CheckpointType } from "@/shared/types/checkpoint-type.enum";
 import { BlockBatchProcessor } from "../application/block-batch-processor.service";
 import { TransferEventIndexerService } from "@/transfer-indexing/application/transfer-event-indexer.service";
 import { TransferEventService } from "@/transfer-indexing/application/transfer-event.service";
-import { BlockchainBlockReader } from "../infrastructure/rpc/blockchain-block-reader";
-import { BlockchainLogReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-log-reader";
-import { BlockchainTransactionReader } from "@/transfer-indexing/infrastructure/rpc/blockchain-transaction-reader";
 import { TransferEventSaveService } from "@/transfer-indexing/application/transfer-event-save.service";
+import {
+  BLOCK_READER,
+  BlockReader,
+} from "../domain/protocol/block-reader.protocol";
+import {
+  LOG_READER,
+  LogReader,
+} from "@/transfer-indexing/domain/protocol/log-reader.protocol";
+import {
+  TRANSACTION_READER,
+  TransactionReader,
+} from "@/transfer-indexing/domain/protocol/transaction-reader.protocol";
+import {
+  TRANSACTION_REPOSITORY,
+  TransactionRepository,
+} from "@/transfer-indexing/domain/repository/transaction.repository";
+import {
+  TRANSFER_EVENT_REPOSITORY,
+  TransferEventRepository,
+} from "@/transfer-indexing/domain/repository/transfer-event.repository";
 
 @Controller("api/indexer")
 export class SyncController {
@@ -28,18 +43,18 @@ export class SyncController {
   constructor(
     @Inject(CheckpointService)
     private readonly checkpointService: CheckpointService,
-    @Inject(BlockchainBlockReader)
-    private readonly blockchainBlockReader: BlockchainBlockReader,
-    @Inject(BlockchainLogReader)
-    private readonly blockchainLogReader: BlockchainLogReader,
-    @Inject(BlockchainTransactionReader)
-    private readonly blockchainTransactionReader: BlockchainTransactionReader,
+    @Inject(BLOCK_READER)
+    private readonly blockReader: BlockReader,
+    @Inject(LOG_READER)
+    private readonly logReader: LogReader,
+    @Inject(TRANSACTION_READER)
+    private readonly transactionReader: TransactionReader,
     @Inject(Erc20TransferEventDecoder)
     private readonly transferEventDecoder: Erc20TransferEventDecoder,
-    @Inject(PostgresTransactionRepository)
-    private readonly transactionRepository: PostgresTransactionRepository,
-    @Inject(PostgresTransferEventRepository)
-    private readonly transferEventRepository: PostgresTransferEventRepository,
+    @Inject(TRANSACTION_REPOSITORY)
+    private readonly transactionRepository: TransactionRepository,
+    @Inject(TRANSFER_EVENT_REPOSITORY)
+    private readonly transferEventRepository: TransferEventRepository,
   ) {}
 
   @Get("status")
@@ -52,7 +67,7 @@ export class SyncController {
       await this.checkpointService.getLastProcessedBlockNumber(
         CheckpointType.FORWARDFILL,
       );
-    const latestBlock = await this.blockchainBlockReader.getLatestBlockNumber();
+    const latestBlock = await this.blockReader.getLatestBlockNumber();
     const savedTransactionCount = await this.transactionRepository.count();
     const savedTransferEventCount = await this.transferEventRepository.count();
 
@@ -172,9 +187,9 @@ export class SyncController {
     return { ok: true, message: "Forwardfill stop requested" };
   }
 
-  private createRunBackfillService(
+  private createTransferEventService(
     targetWalletAddress: string,
-  ): RunBackfillService {
+  ): TransferEventService {
     const transferEventSaveService = new TransferEventSaveService(
       this.transactionRepository,
       this.transferEventRepository,
@@ -182,15 +197,22 @@ export class SyncController {
 
     const transferEventIndexerService = new TransferEventIndexerService(
       this.transferEventDecoder,
-      this.blockchainTransactionReader,
+      this.transactionReader,
       transferEventSaveService,
       targetWalletAddress,
     );
 
-    const transferEventService = new TransferEventService(
-      this.blockchainLogReader,
+    return new TransferEventService(
+      this.logReader,
       transferEventIndexerService,
     );
+  }
+
+  private createRunBackfillService(
+    targetWalletAddress: string,
+  ): RunBackfillService {
+    const transferEventService =
+      this.createTransferEventService(targetWalletAddress);
 
     const blockBatchProcessor = new BlockBatchProcessor(
       transferEventService,
@@ -204,22 +226,8 @@ export class SyncController {
     targetWalletAddress: string,
     pollingIntervalMs: number,
   ): RunForwardfillService {
-    const transferEventSaveService = new TransferEventSaveService(
-      this.transactionRepository,
-      this.transferEventRepository,
-    );
-
-    const transferEventIndexerService = new TransferEventIndexerService(
-      this.transferEventDecoder,
-      this.blockchainTransactionReader,
-      transferEventSaveService,
-      targetWalletAddress,
-    );
-
-    const transferEventService = new TransferEventService(
-      this.blockchainLogReader,
-      transferEventIndexerService,
-    );
+    const transferEventService =
+      this.createTransferEventService(targetWalletAddress);
 
     const blockBatchProcessor = new BlockBatchProcessor(
       transferEventService,
@@ -227,7 +235,7 @@ export class SyncController {
     );
 
     return new RunForwardfillService(
-      this.blockchainBlockReader,
+      this.blockReader,
       this.checkpointService,
       pollingIntervalMs,
       blockBatchProcessor,
