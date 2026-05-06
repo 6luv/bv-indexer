@@ -22,7 +22,7 @@ export class RunForwardfillService {
   async runForwardfill(): Promise<void> {
     this.shouldStop = false;
 
-    const checkpoint = await this.checkpointService.getLastProcessedBlockNumber(
+    const checkpoint = await this.checkpointService.getCheckpointByType(
       CheckpointType.FORWARDFILL,
     );
 
@@ -33,6 +33,7 @@ export class RunForwardfillService {
     await this.startForwardfillLoop(nextBlockNumber);
   }
 
+  // Forwardfill 반복 실행
   private async startForwardfillLoop(nextBlockNumber: bigint): Promise<void> {
     while (!this.shouldStop) {
       const latestBlockNumber = await this.blockReader.getLatestBlockNumber();

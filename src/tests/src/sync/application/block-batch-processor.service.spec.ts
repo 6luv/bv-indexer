@@ -21,7 +21,7 @@ describe("BlockBatchProcessor", () => {
     } as unknown as jest.Mocked<TransferEventService>;
 
     checkpointService = {
-      updateLastProcessedBlockNumber: jest.fn(),
+      upsertCheckpoint: jest.fn(),
     } as unknown as jest.Mocked<CheckpointService>;
 
     blockBatchProcessor = new BlockBatchProcessor(
@@ -72,15 +72,17 @@ describe("BlockBatchProcessor", () => {
       10n,
     );
 
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledTimes(4);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(1, 3n, CheckpointType.BACKFILL);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenNthCalledWith(4, 10n, CheckpointType.BACKFILL);
+    expect(checkpointService.upsertCheckpoint).toHaveBeenCalledTimes(4);
+    expect(checkpointService.upsertCheckpoint).toHaveBeenNthCalledWith(
+      1,
+      3n,
+      CheckpointType.BACKFILL,
+    );
+    expect(checkpointService.upsertCheckpoint).toHaveBeenNthCalledWith(
+      4,
+      10n,
+      CheckpointType.BACKFILL,
+    );
   });
 
   it("배치 처리 중 실패하면 이후 배치와 체크포인트 업데이트를 진행하지 않아야 한다.", async () => {
@@ -106,11 +108,10 @@ describe("BlockBatchProcessor", () => {
     );
 
     expect(transferEventService.indexByBlockRange).toHaveBeenCalledTimes(2);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledTimes(1);
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).toHaveBeenCalledWith(3n, CheckpointType.BACKFILL);
+    expect(checkpointService.upsertCheckpoint).toHaveBeenCalledTimes(1);
+    expect(checkpointService.upsertCheckpoint).toHaveBeenCalledWith(
+      3n,
+      CheckpointType.BACKFILL,
+    );
   });
 });

@@ -35,7 +35,7 @@ export class BlockBatchProcessor {
     );
 
     // 체크포인트 갱신
-    await this.checkpointService.updateLastProcessedBlockNumber(
+    await this.checkpointService.upsertCheckpoint(
       toBlock,
       CheckpointType.BACKFILL,
     );
@@ -52,7 +52,7 @@ export class BlockBatchProcessor {
       `[BlockBatchProcessor] indexed forwardfill transfer events: ${result.indexedTransferEventCount}`,
     );
 
-    await this.checkpointService.updateLastProcessedBlockNumber(
+    await this.checkpointService.upsertCheckpoint(
       blockNumber,
       CheckpointType.FORWARDFILL,
     );

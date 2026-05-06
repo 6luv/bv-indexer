@@ -12,7 +12,7 @@ export class TransferEventSaveService {
   ) {}
 
   // 저장되지 않은 트랜잭션만 저장한다.
-  async saveTransactionsIfAbsent(transactions: Transaction[]): Promise<void> {
+  async saveNewTransactions(transactions: Transaction[]): Promise<void> {
     for (const transaction of transactions) {
       const exists = await this.transactionRepository.existsByHash(
         transaction.getHash(),
@@ -25,9 +25,7 @@ export class TransferEventSaveService {
   }
 
   // 저장되지 않은 Transfer 이벤트만 저장한다.
-  async saveTransferEventsIfAbsent(
-    transferEvents: TransferEvent[],
-  ): Promise<void> {
+  async saveNewTransferEvents(transferEvents: TransferEvent[]): Promise<void> {
     for (const transferEvent of transferEvents) {
       const exists =
         await this.transferEventRepository.existsByTransactionHashAndLogIndex(

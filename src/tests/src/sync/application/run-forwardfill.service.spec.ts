@@ -8,7 +8,6 @@ import { TransferEventService } from "@/transfer-indexing/application/transfer-e
 
 describe("RunForwardfillService", () => {
   let blockReader: jest.Mocked<BlockReader>;
-  let transferEventService: jest.Mocked<TransferEventService>;
   let checkpointService: jest.Mocked<CheckpointService>;
   let runForwardfillService: RunForwardfillService;
   let blockBatchProcessor: jest.Mocked<BlockBatchProcessor>;
@@ -18,14 +17,9 @@ describe("RunForwardfillService", () => {
       getLatestBlockNumber: jest.fn(),
     } as unknown as jest.Mocked<BlockReader>;
 
-    transferEventService = {
-      indexByBlockRange: jest.fn(),
-      indexByBlockNumber: jest.fn(),
-    } as unknown as jest.Mocked<TransferEventService>;
-
     checkpointService = {
-      getLastProcessedBlockNumber: jest.fn(),
-      updateLastProcessedBlockNumber: jest.fn(),
+      getCheckpointByType: jest.fn(),
+      upsertCheckpoint: jest.fn(),
       deleteCheckpoint: jest.fn(),
     } as unknown as jest.Mocked<CheckpointService>;
 
@@ -44,7 +38,7 @@ describe("RunForwardfillService", () => {
 
   it("체크포인트가 없으면 최신 블록부터 Forwardfill을 시작해야 한다.", async () => {
     // Given
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(null);
+    checkpointService.getCheckpointByType.mockResolvedValue(null);
     blockReader.getLatestBlockNumber.mockResolvedValue(100n);
 
     blockBatchProcessor.processForwardfillBlock.mockImplementation(async () => {
@@ -55,7 +49,7 @@ describe("RunForwardfillService", () => {
     await runForwardfillService.runForwardfill();
 
     // Then
-    expect(checkpointService.getLastProcessedBlockNumber).toHaveBeenCalledWith(
+    expect(checkpointService.getCheckpointByType).toHaveBeenCalledWith(
       CheckpointType.FORWARDFILL,
     );
     expect(blockReader.getLatestBlockNumber).toHaveBeenCalled();
@@ -74,7 +68,7 @@ describe("RunForwardfillService", () => {
       Math.floor(Date.now() / 1000),
     );
 
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
+    checkpointService.getCheckpointByType.mockResolvedValue(checkpoint);
 
     blockReader.getLatestBlockNumber.mockImplementation(async () => {
       runForwardfillService.stop();
@@ -96,7 +90,7 @@ describe("RunForwardfillService", () => {
       Math.floor(Date.now() / 1000),
     );
 
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
+    checkpointService.getCheckpointByType.mockResolvedValue(checkpoint);
     blockReader.getLatestBlockNumber.mockResolvedValue(105n);
 
     blockBatchProcessor.processForwardfillBlock.mockImplementation(async () => {

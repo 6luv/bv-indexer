@@ -73,7 +73,7 @@ describe("TransferEventSaveService", () => {
     transactionRepository.existsByHash.mockResolvedValue(false);
 
     // When
-    await transferEventSaveService.saveTransactionsIfAbsent([transaction]);
+    await transferEventSaveService.saveNewTransactions([transaction]);
 
     // Then
     expect(transactionRepository.existsByHash).toHaveBeenCalledWith(txHash);
@@ -89,7 +89,7 @@ describe("TransferEventSaveService", () => {
     transactionRepository.existsByHash.mockResolvedValue(true);
 
     // When
-    await transferEventSaveService.saveTransactionsIfAbsent([transaction]);
+    await transferEventSaveService.saveNewTransactions([transaction]);
 
     // Then
     expect(transactionRepository.existsByHash).toHaveBeenCalledWith(txHash);
@@ -105,7 +105,7 @@ describe("TransferEventSaveService", () => {
     );
 
     // When
-    await transferEventSaveService.saveTransferEventsIfAbsent([transferEvent]);
+    await transferEventSaveService.saveNewTransferEvents([transferEvent]);
 
     // Then
     expect(
@@ -125,7 +125,7 @@ describe("TransferEventSaveService", () => {
     );
 
     // When
-    await transferEventSaveService.saveTransferEventsIfAbsent([transferEvent]);
+    await transferEventSaveService.saveNewTransferEvents([transferEvent]);
 
     // Then
     expect(

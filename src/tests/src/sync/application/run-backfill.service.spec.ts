@@ -11,8 +11,8 @@ describe("RunBackfillService", () => {
 
   beforeEach(() => {
     checkpointService = {
-      getLastProcessedBlockNumber: jest.fn(),
-      updateLastProcessedBlockNumber: jest.fn(),
+      getCheckpointByType: jest.fn(),
+      upsertCheckpoint: jest.fn(),
       deleteCheckpoint: jest.fn(),
     } as unknown as jest.Mocked<CheckpointService>;
 
@@ -29,7 +29,7 @@ describe("RunBackfillService", () => {
 
   it("체크포인트가 없으면 startBlock부터 endBlock까지 batchSize 단위로 배치를 생성해 처리해야 한다.", async () => {
     // Given
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(null);
+    checkpointService.getCheckpointByType.mockResolvedValue(null);
 
     // When
     await runBackfillService.runBackfill(1n, 10n, 3);
@@ -52,7 +52,7 @@ describe("RunBackfillService", () => {
       Math.floor(Date.now() / 1000),
     );
 
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
+    checkpointService.getCheckpointByType.mockResolvedValue(checkpoint);
 
     // When
     await runBackfillService.runBackfill(1n, 10n, 3);
@@ -73,16 +73,14 @@ describe("RunBackfillService", () => {
       Math.floor(Date.now() / 1000),
     );
 
-    checkpointService.getLastProcessedBlockNumber.mockResolvedValue(checkpoint);
+    checkpointService.getCheckpointByType.mockResolvedValue(checkpoint);
 
     // When
     await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
     expect(blockBatchProcessor.processAll).not.toHaveBeenCalled();
-    expect(
-      checkpointService.updateLastProcessedBlockNumber,
-    ).not.toHaveBeenCalled();
+    expect(checkpointService.upsertCheckpoint).not.toHaveBeenCalled();
   });
 
   it("startBlock이 음수면 에러가 발생해야 한다.", async () => {

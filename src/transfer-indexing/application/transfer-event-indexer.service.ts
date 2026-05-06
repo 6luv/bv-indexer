@@ -30,8 +30,8 @@ export class TransferEventIndexerService {
     const transactions =
       await this.transactionReader.getTransactionsByHashes(txHashes);
 
-    await this.transferEventSaveService.saveTransactionsIfAbsent(transactions);
-    await this.transferEventSaveService.saveTransferEventsIfAbsent(
+    await this.transferEventSaveService.saveNewTransactions(transactions);
+    await this.transferEventSaveService.saveNewTransferEvents(
       indexedTransferEvents,
     );
 

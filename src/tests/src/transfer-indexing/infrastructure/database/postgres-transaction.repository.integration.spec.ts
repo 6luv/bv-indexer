@@ -15,6 +15,10 @@ describe("PostgresTransactionRepository", () => {
     now,
   );
 
+  beforeAll(() => {
+    repository = new PostgresTransactionRepository();
+  });
+
   beforeEach(async () => {
     repository = new PostgresTransactionRepository();
     await prisma.transferEvent.deleteMany();

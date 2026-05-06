@@ -23,7 +23,7 @@ export class RunBackfillService {
   ): Promise<void> {
     this.backfillValidator.validate(startBlock, endBlock, batchSize);
 
-    const checkpoint = await this.checkpointService.getLastProcessedBlockNumber(
+    const checkpoint = await this.checkpointService.getCheckpointByType(
       CheckpointType.BACKFILL,
     );
     let adjustedStartBlock = startBlock;

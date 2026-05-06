@@ -75,8 +75,8 @@ describe("TransferEventIndexerService", () => {
     } as unknown as jest.Mocked<TransactionReader>;
 
     transferEventSaveService = {
-      saveTransactionsIfAbsent: jest.fn(),
-      saveTransferEventsIfAbsent: jest.fn(),
+      saveNewTransactions: jest.fn(),
+      saveNewTransferEvents: jest.fn(),
     } as unknown as jest.Mocked<TransferEventSaveService>;
 
     transferEventIndexerService = new TransferEventIndexerService(
@@ -105,12 +105,12 @@ describe("TransferEventIndexerService", () => {
       txHash,
     ]);
 
-    expect(
-      transferEventSaveService.saveTransactionsIfAbsent,
-    ).toHaveBeenCalledWith([transaction]);
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([transferEvent]);
+    expect(transferEventSaveService.saveNewTransactions).toHaveBeenCalledWith([
+      transaction,
+    ]);
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [transferEvent],
+    );
 
     expect(result).toEqual({
       logCount: 1,
@@ -134,12 +134,12 @@ describe("TransferEventIndexerService", () => {
     expect(transferEventDecoder.decode).toHaveBeenCalledWith(log);
     expect(transactionReader.getTransactionsByHashes).toHaveBeenCalledWith([]);
 
-    expect(
-      transferEventSaveService.saveTransactionsIfAbsent,
-    ).toHaveBeenCalledWith([]);
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([]);
+    expect(transferEventSaveService.saveNewTransactions).toHaveBeenCalledWith(
+      [],
+    );
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [],
+    );
 
     expect(result).toEqual({
       logCount: 1,
@@ -166,12 +166,12 @@ describe("TransferEventIndexerService", () => {
     // Then
     expect(transactionReader.getTransactionsByHashes).toHaveBeenCalledWith([]);
 
-    expect(
-      transferEventSaveService.saveTransactionsIfAbsent,
-    ).toHaveBeenCalledWith([]);
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([]);
+    expect(transferEventSaveService.saveNewTransactions).toHaveBeenCalledWith(
+      [],
+    );
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [],
+    );
 
     expect(result).toEqual({
       logCount: 1,
@@ -219,9 +219,9 @@ describe("TransferEventIndexerService", () => {
       txHash,
     ]);
 
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([transferEvent1, transferEvent2]);
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [transferEvent1, transferEvent2],
+    );
 
     expect(result).toEqual({
       logCount: 2,
@@ -249,9 +249,9 @@ describe("TransferEventIndexerService", () => {
 
     // Then
     expect(result.indexedTransferEventCount).toBe(1);
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([transferEvent]);
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [transferEvent],
+    );
   });
 
   it("로그가 비어 있으면 아무것도 디코딩하지 않고 count는 0이어야 한다.", async () => {
@@ -265,12 +265,12 @@ describe("TransferEventIndexerService", () => {
     expect(transferEventDecoder.decode).not.toHaveBeenCalled();
     expect(transactionReader.getTransactionsByHashes).toHaveBeenCalledWith([]);
 
-    expect(
-      transferEventSaveService.saveTransactionsIfAbsent,
-    ).toHaveBeenCalledWith([]);
-    expect(
-      transferEventSaveService.saveTransferEventsIfAbsent,
-    ).toHaveBeenCalledWith([]);
+    expect(transferEventSaveService.saveNewTransactions).toHaveBeenCalledWith(
+      [],
+    );
+    expect(transferEventSaveService.saveNewTransferEvents).toHaveBeenCalledWith(
+      [],
+    );
 
     expect(result).toEqual({
       logCount: 0,

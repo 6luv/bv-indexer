@@ -10,13 +10,11 @@ export class CheckpointService {
     private readonly checkpointRepository: CheckpointRepository,
   ) {}
 
-  async getLastProcessedBlockNumber(
-    type: CheckpointType,
-  ): Promise<Checkpoint | null> {
+  async getCheckpointByType(type: CheckpointType): Promise<Checkpoint | null> {
     return this.checkpointRepository.findByType(type);
   }
 
-  async updateLastProcessedBlockNumber(
+  async upsertCheckpoint(
     blockNumber: bigint,
     type: CheckpointType,
   ): Promise<void> {

@@ -29,7 +29,7 @@ describe("CheckpointService", () => {
     checkpointRepository.findByType.mockResolvedValue(checkpoint);
 
     // When
-    const result = await checkpointService.getLastProcessedBlockNumber(
+    const result = await checkpointService.getCheckpointByType(
       CheckpointType.BACKFILL,
     );
 
@@ -42,7 +42,7 @@ describe("CheckpointService", () => {
     checkpointRepository.findByType.mockResolvedValue(null);
 
     // When
-    const result = await checkpointService.getLastProcessedBlockNumber(
+    const result = await checkpointService.getCheckpointByType(
       CheckpointType.BACKFILL,
     );
 
@@ -55,10 +55,7 @@ describe("CheckpointService", () => {
     checkpointRepository.findByType.mockResolvedValue(null);
 
     // When
-    await checkpointService.updateLastProcessedBlockNumber(
-      100n,
-      CheckpointType.BACKFILL,
-    );
+    await checkpointService.upsertCheckpoint(100n, CheckpointType.BACKFILL);
 
     // Then
     expect(checkpointRepository.findByType).toHaveBeenCalledWith(
@@ -88,10 +85,7 @@ describe("CheckpointService", () => {
     checkpointRepository.findByType.mockResolvedValue(existingCheckpoint);
 
     // When
-    await checkpointService.updateLastProcessedBlockNumber(
-      200n,
-      CheckpointType.BACKFILL,
-    );
+    await checkpointService.upsertCheckpoint(200n, CheckpointType.BACKFILL);
 
     // Then
     expect(checkpointRepository.findByType).toHaveBeenCalledWith(
@@ -116,10 +110,7 @@ describe("CheckpointService", () => {
 
     // When & Then
     await expect(
-      checkpointService.updateLastProcessedBlockNumber(
-        -1n,
-        CheckpointType.BACKFILL,
-      ),
+      checkpointService.upsertCheckpoint(-1n, CheckpointType.BACKFILL),
     ).rejects.toThrow("Last processed block must be >= 0");
 
     expect(checkpointRepository.save).not.toHaveBeenCalled();
