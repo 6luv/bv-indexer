@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Inject } from "@nestjs/common";
+import { Controller, Get, Post, Body, Inject, Logger } from "@nestjs/common";
 import { CheckpointService } from "@/checkpoint/application/checkpoint.service";
 import { Erc20TransferEventDecoder } from "@/transfer-indexing/infrastructure/decoder/erc20-transfer-event.decoder";
 import { RunBackfillService } from "../application/run-backfill.service";
@@ -31,8 +31,13 @@ import {
 
 @Controller("api/indexer")
 export class SyncController {
+  private readonly logger = new Logger(SyncController.name);
+
   private isForwardfillRunning = false;
+  private isBackfillRunning = false;
+
   private activeForwardfillService: RunForwardfillService | null = null;
+
   private currentMode: "BACKFILL" | "FORWARDFILL" = "BACKFILL";
   private currentTargetWalletAddress: string | null = null;
   private currentStartBlock: number | null = null;
@@ -59,14 +64,15 @@ export class SyncController {
 
   @Get("status")
   async getStatus() {
-    const backfillCheckpoint =
-      await this.checkpointService.getLastProcessedBlockNumber(
-        CheckpointType.BACKFILL,
-      );
+    const backfillCheckpoint = await this.checkpointService.getCheckpointByType(
+      CheckpointType.BACKFILL,
+    );
+
     const forwardfillCheckpoint =
-      await this.checkpointService.getLastProcessedBlockNumber(
+      await this.checkpointService.getCheckpointByType(
         CheckpointType.FORWARDFILL,
       );
+
     const latestBlock = await this.blockReader.getLatestBlockNumber();
     const savedTransactionCount = await this.transactionRepository.count();
     const savedTransferEventCount = await this.transferEventRepository.count();
@@ -83,7 +89,9 @@ export class SyncController {
           ? this.isForwardfillRunning
             ? "RUNNING"
             : "IDLE"
-          : "IDLE",
+          : this.isBackfillRunning
+            ? "RUNNING"
+            : "IDLE",
       targetWalletAddress: this.currentTargetWalletAddress,
       currentBlock: null,
       startBlock: this.currentStartBlock,
@@ -107,6 +115,7 @@ export class SyncController {
   @Post("backfill")
   async backfill(@Body() body: any) {
     const { targetWalletAddress, startBlock, endBlock, batchSize } = body;
+
     if (
       !targetWalletAddress ||
       startBlock === undefined ||
@@ -120,32 +129,63 @@ export class SyncController {
       };
     }
 
+    if (this.isBackfillRunning) {
+      return {
+        ok: false,
+        message: "Backfill is already running",
+      };
+    }
+
     this.currentMode = "BACKFILL";
     this.currentTargetWalletAddress = targetWalletAddress;
     this.currentStartBlock = Number(startBlock);
     this.currentEndBlock = Number(endBlock);
     this.currentPollingIntervalMs = null;
     this.lastErrorMessage = null;
+    this.isBackfillRunning = true;
 
     const runBackfillService =
       this.createRunBackfillService(targetWalletAddress);
 
-    await runBackfillService.runBackfill(
-      BigInt(startBlock),
-      BigInt(endBlock),
-      Number(batchSize),
-    );
-    return { ok: true, message: "Backfill completed" };
+    void runBackfillService
+      .runBackfill(BigInt(startBlock), BigInt(endBlock), Number(batchSize))
+      .catch((error) => {
+        this.lastErrorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+
+        this.logger.error(
+          `Backfill failed: ${this.lastErrorMessage}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+
+        return;
+      })
+      .finally(() => {
+        this.isBackfillRunning = false;
+      });
+
+    return {
+      ok: true,
+      message: "Backfill started",
+    };
   }
 
   @Post("forwardfill")
   async forwardfill(@Body() body: any) {
     const { targetWalletAddress, pollingIntervalMs } = body;
+
     if (!targetWalletAddress) {
-      return { ok: false, message: "targetWalletAddress is required" };
+      return {
+        ok: false,
+        message: "targetWalletAddress is required",
+      };
     }
+
     if (this.isForwardfillRunning) {
-      return { ok: false, message: "Forwardfill is already running" };
+      return {
+        ok: false,
+        message: "Forwardfill is already running",
+      };
     }
 
     this.currentMode = "FORWARDFILL";
@@ -163,28 +203,45 @@ export class SyncController {
     this.activeForwardfillService = runForwardfillService;
     this.isForwardfillRunning = true;
 
-    runForwardfillService
+    void runForwardfillService
       .runForwardfill()
       .catch((error) => {
         this.lastErrorMessage =
           error instanceof Error ? error.message : "Unknown error";
-        console.error("Forwardfill failed:", error);
+
+        this.logger.error(
+          `Forwardfill failed: ${this.lastErrorMessage}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+
+        return;
       })
       .finally(() => {
         this.isForwardfillRunning = false;
         this.activeForwardfillService = null;
       });
 
-    return { ok: true, message: "Forwardfill started" };
+    return {
+      ok: true,
+      message: "Forwardfill started",
+    };
   }
 
   @Post("forwardfill/stop")
   async stopForwardfill() {
     if (!this.isForwardfillRunning || !this.activeForwardfillService) {
-      return { ok: false, message: "Forwardfill is not running" };
+      return {
+        ok: false,
+        message: "Forwardfill is not running",
+      };
     }
+
     this.activeForwardfillService.stop();
-    return { ok: true, message: "Forwardfill stop requested" };
+
+    return {
+      ok: true,
+      message: "Forwardfill stop requested",
+    };
   }
 
   private createTransferEventService(
