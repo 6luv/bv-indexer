@@ -16,14 +16,33 @@ export class BlockBatchProcessor {
   ) {}
 
   // 생성된 배치 목록을 순차적으로 처리
-  async processAll(batches: BackfillBatch[]): Promise<void> {
-    for (const batch of batches) {
-      await this.process(batch);
+  async processAllBackfill(
+    batches: BackfillBatch[],
+    concurrency = 3,
+  ): Promise<void> {
+    if (concurrency <= 0) {
+      throw new Error("concurrency must be greater than 0");
+    }
+
+    for (let i = 0; i < batches.length; i += concurrency) {
+      const chunk = batches.slice(i, i + concurrency);
+
+      const lastBatch = chunk[chunk.length - 1];
+      if (!lastBatch) {
+        continue;
+      }
+
+      await Promise.all(chunk.map((batch) => this.processBackfill(batch)));
+
+      await this.checkpointService.upsertCheckpoint(
+        lastBatch.toBlock,
+        CheckpointType.BACKFILL,
+      );
     }
   }
 
   // 하나의 배치 범위를 기준으로 백필 수행
-  async process(batch: BackfillBatch): Promise<void> {
+  async processBackfill(batch: BackfillBatch): Promise<void> {
     const { fromBlock, toBlock } = batch;
     const result = await this.transferEventService.indexByBlockRange(
       fromBlock,
@@ -32,12 +51,6 @@ export class BlockBatchProcessor {
 
     console.log(
       `[BlockBatchProcessor] indexed transfer events: ${result.indexedTransferEventCount}`,
-    );
-
-    // 체크포인트 갱신
-    await this.checkpointService.upsertCheckpoint(
-      toBlock,
-      CheckpointType.BACKFILL,
     );
   }
 

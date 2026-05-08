@@ -39,6 +39,6 @@ export class RunBackfillService {
       endBlock,
       batchSize,
     );
-    await this.blockBatchProcessor.processAll(batches);
+    await this.blockBatchProcessor.processAllBackfill(batches);
   }
 }

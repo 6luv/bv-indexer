@@ -21,7 +21,12 @@ const transferEvent = parseAbiItem(
 export class ViemBlockchainClient implements BlockchainClient {
   private readonly client = createPublicClient({
     chain: sepolia,
-    transport: http(rpcUrl),
+    transport: http(rpcUrl, {
+      batch: {
+        batchSize: 10,
+        wait: 100,
+      },
+    }),
   });
 
   async getLatestBlockNumber(): Promise<bigint> {
