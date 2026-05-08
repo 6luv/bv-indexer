@@ -17,8 +17,8 @@ describe("RunBackfillService", () => {
     } as unknown as jest.Mocked<CheckpointService>;
 
     blockBatchProcessor = {
-      processAll: jest.fn(),
-      process: jest.fn(),
+      processAllBackfill: jest.fn(),
+      processBackfill: jest.fn(),
     } as unknown as jest.Mocked<BlockBatchProcessor>;
 
     runBackfillService = new RunBackfillService(
@@ -35,8 +35,8 @@ describe("RunBackfillService", () => {
     await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
-    expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
-    expect(blockBatchProcessor.processAll).toHaveBeenCalledWith([
+    expect(blockBatchProcessor.processAllBackfill).toHaveBeenCalledTimes(1);
+    expect(blockBatchProcessor.processAllBackfill).toHaveBeenCalledWith([
       { fromBlock: 1n, toBlock: 3n },
       { fromBlock: 4n, toBlock: 6n },
       { fromBlock: 7n, toBlock: 9n },
@@ -58,8 +58,8 @@ describe("RunBackfillService", () => {
     await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
-    expect(blockBatchProcessor.processAll).toHaveBeenCalledTimes(1);
-    expect(blockBatchProcessor.processAll).toHaveBeenCalledWith([
+    expect(blockBatchProcessor.processAllBackfill).toHaveBeenCalledTimes(1);
+    expect(blockBatchProcessor.processAllBackfill).toHaveBeenCalledWith([
       { fromBlock: 6n, toBlock: 8n },
       { fromBlock: 9n, toBlock: 10n },
     ]);
@@ -79,7 +79,7 @@ describe("RunBackfillService", () => {
     await runBackfillService.runBackfill(1n, 10n, 3);
 
     // Then
-    expect(blockBatchProcessor.processAll).not.toHaveBeenCalled();
+    expect(blockBatchProcessor.processAllBackfill).not.toHaveBeenCalled();
     expect(checkpointService.upsertCheckpoint).not.toHaveBeenCalled();
   });
 
