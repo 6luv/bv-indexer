@@ -37,12 +37,11 @@ export class SyncController {
   private isBackfillRunning = false;
 
   private activeForwardfillService: RunForwardfillService | null = null;
-
-  private currentMode: "BACKFILL" | "FORWARDFILL" = "BACKFILL";
   private currentTargetWalletAddress: string | null = null;
-  private currentStartBlock: number | null = null;
-  private currentEndBlock: number | null = null;
-  private currentPollingIntervalMs: number | null = null;
+  private backfillStartBlock: number | null = null;
+  private backfillEndBlock: number | null = null;
+  private backfillBatchSize: number | null = null;
+  private forwardfillPollingIntervalMs: number | null = null;
   private lastErrorMessage: string | null = null;
 
   constructor(
@@ -77,36 +76,34 @@ export class SyncController {
     const savedTransactionCount = await this.transactionRepository.count();
     const savedTransferEventCount = await this.transferEventRepository.count();
 
-    const activeCheckpoint =
-      this.currentMode === "FORWARDFILL"
-        ? forwardfillCheckpoint
-        : backfillCheckpoint;
-
     return {
-      mode: this.currentMode,
-      status:
-        this.currentMode === "FORWARDFILL"
-          ? this.isForwardfillRunning
-            ? "RUNNING"
-            : "IDLE"
-          : this.isBackfillRunning
-            ? "RUNNING"
-            : "IDLE",
       targetWalletAddress: this.currentTargetWalletAddress,
-      currentBlock: null,
-      startBlock: this.currentStartBlock,
-      endBlock: this.currentEndBlock,
+
       latestBlock: Number(latestBlock),
-      lastProcessedBlock: activeCheckpoint
-        ? Number(activeCheckpoint.getLastProcessedBlock())
-        : null,
+
+      backfill: {
+        status: this.isBackfillRunning ? "RUNNING" : "IDLE",
+        startBlock: this.backfillStartBlock,
+        endBlock: this.backfillEndBlock,
+        batchSize: this.backfillBatchSize,
+        lastProcessedBlock: backfillCheckpoint
+          ? Number(backfillCheckpoint.getLastProcessedBlock())
+          : null,
+      },
+
+      forwardfill: {
+        status: this.isForwardfillRunning ? "RUNNING" : "IDLE",
+        pollingIntervalMs: this.forwardfillPollingIntervalMs,
+        lastProcessedBlock: forwardfillCheckpoint
+          ? Number(forwardfillCheckpoint.getLastProcessedBlock())
+          : null,
+      },
+
       savedBlockCount: 0,
       savedTransactionCount,
       savedLogCount: 0,
       savedTransferEventCount,
-      pollingIntervalMs: this.currentPollingIntervalMs,
-      currentBatchFrom: null,
-      currentBatchTo: null,
+
       errorMessage: this.lastErrorMessage,
       updatedAt: new Date().toISOString(),
     };
@@ -136,11 +133,12 @@ export class SyncController {
       };
     }
 
-    this.currentMode = "BACKFILL";
     this.currentTargetWalletAddress = targetWalletAddress;
-    this.currentStartBlock = Number(startBlock);
-    this.currentEndBlock = Number(endBlock);
-    this.currentPollingIntervalMs = null;
+
+    this.backfillStartBlock = Number(startBlock);
+    this.backfillEndBlock = Number(endBlock);
+    this.backfillBatchSize = Number(batchSize);
+
     this.lastErrorMessage = null;
     this.isBackfillRunning = true;
 
@@ -188,12 +186,11 @@ export class SyncController {
       };
     }
 
-    this.currentMode = "FORWARDFILL";
     this.currentTargetWalletAddress = targetWalletAddress;
-    this.currentStartBlock = null;
-    this.currentEndBlock = null;
-    this.currentPollingIntervalMs = Number(pollingIntervalMs ?? 3000);
+    this.forwardfillPollingIntervalMs = Number(pollingIntervalMs ?? 3000);
+
     this.lastErrorMessage = null;
+    this.isForwardfillRunning = true;
 
     const runForwardfillService = this.createRunForwardfillService(
       targetWalletAddress,
@@ -201,7 +198,6 @@ export class SyncController {
     );
 
     this.activeForwardfillService = runForwardfillService;
-    this.isForwardfillRunning = true;
 
     void runForwardfillService
       .runForwardfill()
