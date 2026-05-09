@@ -31,7 +31,7 @@ describe("PostgresTransferEventRepository", () => {
       logIndex,
     );
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     repository = new PostgresTransferEventRepository();
 
     await prisma.transferEvent.deleteMany();

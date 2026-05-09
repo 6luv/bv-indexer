@@ -293,11 +293,23 @@ describe("SyncController", () => {
 
     // Then
     expect(result).toMatchObject({
-      mode: "BACKFILL",
-      status: "IDLE",
       targetWalletAddress: null,
       latestBlock: 100,
-      lastProcessedBlock: null,
+
+      backfill: {
+        status: "IDLE",
+        startBlock: null,
+        endBlock: null,
+        batchSize: null,
+        lastProcessedBlock: null,
+      },
+
+      forwardfill: {
+        status: "IDLE",
+        pollingIntervalMs: null,
+        lastProcessedBlock: null,
+      },
+
       savedTransactionCount: 2,
       savedTransferEventCount: 3,
       errorMessage: null,
