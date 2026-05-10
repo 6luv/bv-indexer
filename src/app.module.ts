@@ -10,9 +10,14 @@ import { BlockchainLogReader } from "./transfer-indexing/infrastructure/rpc/bloc
 import { BlockchainTransactionReader } from "./transfer-indexing/infrastructure/rpc/blockchain-transaction-reader";
 import { BLOCKCHAIN_CLIENT } from "./shared/domain/protocol/blockchain-client.protocol";
 import { ViemBlockchainClient } from "./shared/viem/viem-blockchain-client";
+import { SyncController } from "./sync/entry-point/sync.controller";
+import { BLOCK_READER } from "./sync/domain/protocol/block-reader.protocol";
+import { BlockchainBlockReader } from "./sync/infrastructure/rpc/blockchain-block-reader";
+import { PostgresCheckpointRepository } from "./checkpoint/infrastructure/database/postgres-checkpoint.repository";
+import { CheckpointService } from "./checkpoint/application/checkpoint.service";
 
 @Module({
-  controllers: [],
+  controllers: [SyncController],
   providers: [
     Erc20TransferEventDecoder,
     {
@@ -34,6 +39,17 @@ import { ViemBlockchainClient } from "./shared/viem/viem-blockchain-client";
     {
       provide: TRANSFER_EVENT_REPOSITORY,
       useClass: PostgresTransferEventRepository,
+    },
+    {
+      provide: BLOCK_READER,
+      useClass: BlockchainBlockReader,
+    },
+    PostgresCheckpointRepository,
+    {
+      provide: CheckpointService,
+      useFactory: (checkpointRepository: PostgresCheckpointRepository) =>
+        new CheckpointService(checkpointRepository),
+      inject: [PostgresCheckpointRepository],
     },
   ],
 })
