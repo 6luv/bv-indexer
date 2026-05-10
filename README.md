@@ -1,349 +1,104 @@
-# BV Indexer
-
-## 1. 프로젝트 소개
-
-BV Indexer는 특정 EVM 지갑 주소를 기준으로 블록체인 데이터를 인덱싱하는 프로젝트입니다.
-
-- 지정한 블록 범위를 기준으로 과거 데이터를 수집 (Backfill)
-- 최신 블록을 기준으로 지속적으로 추적하는 실시간 동기화 (Forwardfill)
-- ERC-20 `Transfer` 이벤트 인덱싱
-- 체크포인트 기반
-- 인덱싱 상태 조회 API 제공
-- PostgreSQL, Prisma 기반 데이터 저장
+## 해당 브랜치의 역할
 
----
+- ERC-20 Transfer 로그 조회
+- 조회한 로그를 `TransferEvent` 도메인 모델로 디코딩
+- 특정 지갑 기준 Transfer 이벤트 필터링
+- 관련 `Transaction` 조회
+- `Transaction` / `TransferEvent` 중복 없이 저장
 
-## 2. 주요 기능
+## 관련이슈
 
-### 2.1 백필 (Backfill)
+-
 
-사용자가 입력한 시작 블록부터 종료 블록까지 순차적으로 처리합니다.
+## 구현내용
 
-- block range 단위 처리
-- batch size 기반 배치 처리
-- 체크포인트 이후부터 이어서 처리 가능
+### 1. Domain Model
 
-### 2.2 실시간 동기화 (Forwardfill)
+- `/domain/model/log.ts`
+  - RPC에서 조회한 raw log를 표현하는 `Log` 도메인 모델
+  - address, topics, data, blockNumber, blockTimestamp, transactionHash, logIndex에 대한 기본 검증 구현
 
-체크포인트 이후 블록부터 현재 최신 블록까지 따라잡은 뒤, polling 방식으로 신규 블록을 계속 처리합니다.
+- `/domain/model/transaction.ts`
+  - Transfer 이벤트가 발생한 트랜잭션 정보를 표현하는 `Transaction` 도메인 모델
+  - hash, from/to address, value, blockHash, blockNumber, blockTimestamp에 대한 기본 검증 구현
 
-- 최신 블록 추적
-- polling interval 설정 가능
-- 중지 요청 가능
+- `/domain/model/transfer-event.ts`
+  - ERC-20 Transfer 이벤트 정보를 표현하는 `TransferEvent` 도메인 모델
+  - tokenAddress, from/to address, value, blockNumber, transactionHash, logIndex에 대한 기본 검증 구현
 
-### 2.3 ERC-20 `Transfer` 이벤트 인덱싱
+### 2. Protocol / Repository Interface
 
-로그를 조회하여 ERC-20 `Transfer(address,address,uint256)` 이벤트를 디코딩하고, 특정 지갑 주소와 관련된 이벤트만 필터링하여 저장합니다.
+- `/domain/protocol/log-reader.protocol.ts`
+  - 블록 번호 / 블록 범위 기준으로 로그를 조회하기 위한 `LogReader` 인터페이스
 
-### 2.4 체크포인트 관리
+- `/domain/protocol/transaction-reader.protocol.ts`
+  - transactionHash 목록으로 트랜잭션 정보를 조회하기 위한 `TransactionReader` 인터페이스
 
-백필과 실시간 동기화 각각의 마지막 처리 블록을 제공합니다.
+- `/domain/protocol/decoder/transfer-event.decoder.ts`
+  - `Log`를 `TransferEvent`로 변환하기 위한 `TransferEventDecoder` 인터페이스
 
-- `BACKFILL`
-- `FORWARDFILL`
+- `/domain/repository/transaction.repository.ts`
+  - `Transaction` 저장, 중복 확인, count 조회를 위한 `TransactionRepository` 인터페이스
 
-### 2.5 상태 조회
+- `/domain/repository/transfer-event.repository.ts`
+  - `TransferEvent` 저장, 중복 확인, count 조회를 위한 `TransferEventRepository` 인터페이스
 
-현재 인덱서의 실행 상태를 API로 조회할 수 있습니다.
+### 3. Shared / Blockchain Client
 
-- 현재 모드
-- 실행 상태
-- 대상 지갑 주소
-- 현재 블록
-- 마지막 처리 블록
-- 최신 블록
-- 저장된 트랜잭션 수
-- 저장된 Transfer 이벤트 수
+- `/shared/domain/protocol/blockchain-client.protocol.ts`
+  - viem 같은 RPC에 직접 의존하지 않기 위한 `BlockchainClient` 인터페이스
 
----
+- `/shared/viem/viem-blockchain-client.ts`
+  - viem 기반 최신 블록, 로그, 트랜잭션 정보를 조회하는 `BlockchainClient` 구현체
 
-## 기술 스택
+### 4. Infrastructure
 
-- Node.js
-- TypeScript
-- Express
-- Prisma
-- PostgreSQL
-- viem
+- `/infrastructure/rpc/blockchain-log-reader.ts`
+  - `BlockchainClient`를 사용하여 블록 번호 / 범위의 로그를 조회하는 `LogReader` 구현체
 
----
+- `/infrastructure/rpc/blockchain-transaction-reader.ts`
+  - `BlockchainClient`를 사용하여 transactionHash 목록으로 트랜잭션을 조회하는 `TransactionReader` 구현체
 
-## 프로젝트 구조
+- `/infrastructure/decoder/erc20-transfer-event.decoder.ts`
+  - ERC-20 Transfer 이벤트를 해석하여 `TransferEvent` 도메인 객체로 변환하는 `Erc20TransferEventDecoder` 구현체
 
-```text
-src
-├── checkpoint                       # 백필/포워드필 진행 상태 관리
-│   ├── application                      # checkpoint 조회/갱신 유스케이스
-│   ├── domain                           # checkpoint 도메인 영역
-│   │   ├── model                           # Checkpoint 도메인 모델
-│   │   └── repository                      # Checkpoint 저장소 인터페이스
-│   └── infrastructure                   # checkpoint 외부 구현
-│       └── database                        # checkpoint DB 구현체
-├── sync                             # 백필/포워드필 실행 흐름 관리
-│   ├── application                      # backfill/forwardfill 유스케이스
-│   │   └── types                           # backfill-batch 타입
-│   ├── entry-point                      # API 요청 진입점
-│   └── infrastructure                   # sync 외부 구현
-│       └── rpc                             # sync에서 사용하는 RPC 구현
-├── transfer-indexing                # Transfer 데이터 인덱싱
-│   ├── application                      # 인덱싱 유스케이스/포트/디코더
-│   │   ├── decoder                         # Transfer 이벤트 디코딩 추상화
-│   │   ├── port                            # RPC 등 외부 의존성 인터페이스
-│   │   └── types                           # 인덱싱 결과 타입
-│   ├── domain                           # 인덱싱 도메인 영역
-│   │   ├── model                           # Log/Transaction/TransferEvent 모델
-│   │   └── repository                      # 도메인 저장소 인터페이스
-│   └── infrastructure                   # 실제 RPC/DB/Decoder 구현
-│       ├── database                        # DB repository 구현체
-│       ├── decoder                         # viem 기반 decoder 구현체
-│       └── rpc                             # viem 기반 RPC client 구현체
-├── shared                           # 공통 모듈
-│   ├── database                         # DB client 및 연결 설정
-│   ├── types                            # 공통 enum/type
-│   └── viem                             # viem client 설정
-└── main-server.ts                   # 서버 실행 진입점
-```
+- `/infrastructure/database/postgres-transaction.repository.ts`
+  - Prisma / PostgreSQL 기반 `TransactionRepository` 구현체
+  - transactionHash 기준 중복 확인 / 저장 기능 구현
 
----
+- `/infrastructure/database/postgres-transfer-event.repository.ts`
+  - Prisma / PostgreSQL 기반 `TransferEventRepository` 구현체
+  - transactionHash + logIndex 기준 중복 확인 / 저장 기능 구현
 
-## 모듈 설명
+### 5. Service
 
-### 1. Checkpoint
+- `/application/transfer-event.service.ts`
+  - 블록 번호 / 범위 기준으로 로그 조회, Transfer 이벤트 인덱싱을 실행하는 진입점
 
-인덱싱 작업의 마지막 처리 위치를 관리하는 모듈입니다.
+- `/application/transfer-event-save.service.ts`
+  - `Transaction`과 `TransferEvent`를 중복 없이 저장 기능 구현
 
-#### 주요 책임
+- `/application/transfer-event-indexer.service.ts`
+  - 로그 목록을 Transfer 이벤트로 디코딩, targetWalletAddress가 `from` / `to`에 포함된 이벤트만 필터링
+  - 필터링된 이벤트의 transactionHash를 추출하여 트랜잭션 정보 조회 / 저장 구현
 
-- 백필과 실시간 동기화의 마지막 처리 블록 저장
-- 체크포인트 조회
-- 체크포인트 갱신
-- 재시작 시 다음 처리 시작 블록 결정의 기준 제공
+### 6. Test
 
-#### 구성
+- 도메인 모델 validation 테스트
+- ERC-20 Transfer 이벤트 decoder 테스트
+- Transfer 이벤트 인덱싱 테스트
 
-- `application`
-  - 체크포인트 조회 및 갱신
-- `domain`
-  - `Checkpoint` 모델
-  - `CheckpointRepository` 인터페이스
-- `infrastructure`
-  - `PostgreSQL/Prisma` 기반 체크포인트 저장소 구현
-
-### 2. Sync
+## 중점 리뷰 사항
 
-인덱싱 실행 흐름을 제어하는 모듈입니다.
+1. 구현체 분리
 
-#### 주요 책임
+- 다른 파일에서 `blockchainClient` 인터페이스에 의존하고, `/shared/viem/viem-blockchain-client.ts`에 viem 구현체를 두는 것이 적절한지
+- `/infrastructure/database/` 안에 postgres로 시작된 파일들은 각 repository의 구현체인데 다른 DB로 바뀐다고 했을 때 문제가 없는지?
 
-- 백필 실행
-- 실시간 동기화 실행
-- 실시간 동기화 중지
-- 상태 조회 API 제공
-- 인덱싱 서비스 호출
-- 체크포인트를 기준으로 처리 범위 계산
+2. DB 테스트
 
-#### 구성
+- repository test 안해도 된다고 들었는데 맞는지
 
-- `application`
-  - `RunBackfillService`
-  - `RunForwardfillService`
-  - 실행 흐름 제어
-- `infrastructure`
-  - `rpc`
-    - 최신 블록 조회용 RPC 구현체
-  - `api`
-    - Express Router
-    - 백필 / 실시간 동기화 / 상태 조회 HTTP 엔드포인트
-
-#### 필드
-
-- `type`
-- `last_processed_block`
-- `updated_at`
-
-### Transfer Indexing
-
-블록체인 데이터에서 실제 인덱싱 대상을 추출하고 저장하는 모듈입니다.
-
-#### 주요 책임
-
-- 블록 또는 블록 범위의 로그 조회
-- ERC-20 `Transfer` 이벤트 디코딩
-- 대상 지갑과 관련된 이벤트 필터링
-- 관련 트랜잭션 저장, `Transfer` 이벤트 저장
-
-#### 구성
-
-- `application`
-  - 블록 범위 인덱싱
-  - 로그 조회
-  - 트랜잭션 조회
-  - 이벤트 디코더
-- `domain`
-  - `Log`
-  - `Transaction`
-  - `TransferEvent`
-  - 각 저장소 인터페이스
-- `infrastructure`
-  - viem 기반 RPC 클라이언트
-  - ERC-20 `Transfer` 디코더 구현제
-  - PostgreSQL/Prisma 기반 저장소
-
-#### 필드
-
-- `hash`
-- `from_address`
-- `to_address`
-- `value`
-- `block_number`
-- `block_hash`
-- `block_timestamp`
-
-### Shared
-
-여러 모듈에서 공통으로 사용하는 설정을 제공하는 모듈입니다.
-
-#### 주요 책임
-
-- Prisma Client 관리
-- 공통 enum 및 type 관리
-- 외부 RPC Client 설정
-
-#### 구성
-
-- `database`
-  - Prisma Client
-- `types`
-  - 공통 enum, type
-- `viem`
-  - Public Client 및 RPC 설정
-
-#### 필드
-
-- `id`
-- `tokoen_address`
-- `from_address`
-- `to_address`
-- `value`
-- `block_number`
-- `block_timestamp`
-- `transaction_hash`
-- `log_index`
-
----
-
-## API
-
-### 1. 상태 조회
-
-GET `/api/indexer/status` : 현재 인덱서 상태를 조회합니다.
-Response
-
-```json
-{
-  "mode": "BACKFILL",
-  "status": "RUNNING",
-  "targetWalletAddress": "0x...",
-  "currentBlock": 10721452,
-  "startBlock": 10721400,
-  "endBlock": 10721452,
-  "latestBlock": 10722000,
-  "lastProcessedBlock": 10721450,
-  "savedBlockCount": 0,
-  "savedTransactionCount": 3,
-  "savedLogCount": 0,
-  "savedTransferEventCount": 2,
-  "pollingIntervalMs": 3000,
-  "currentBatchFrom": 10721400,
-  "currentBatchTo": 10721452,
-  "errorMessage": null,
-  "updatedAt": "2026-04-24T00:00:00.000Z"
-}
-```
-
-### 2. 백필 실행
-
-POST `/api/indexer/backfill` : 백필을 실행합니다.
-Request
-
-```json
-{
-  "targetWalletAddress": "0x...",
-  "startBlock": "10721400",
-  "endBlock": "10721452",
-  "batchSize": "1"
-}
-```
-
-Response
-
-```json
-{
-  "ok": true,
-  "message": "Backfill completed"
-}
-```
-
-### 3. 실시간 동기화 실행
-
-POST `/api/indexer/forwardfill` : 실시간 동기화를 실행합니다.
-Request
-
-```json
-{
-  "targetWalletAddress": "0x...",
-  "pollingIntervalMs": "3000"
-}
-```
-
-Response
-
-```json
-{
-  "ok": true,
-  "message": "Forwardfill started"
-}
-```
-
-### 4. 실시간 동기화 중지
-
-POST `/api/indexer/forwardfill/stop` : 실시간 동기화를 중지합니다.
-Response
-
-```json
-{
-  "ok": true,
-  "message": "Forwardfill stop requested"
-}
-```
-
----
-
-## 동작 방식
-
-### 1. 백필
-
-1. 시작 블록, 종료 블록, 배치 크기를 입력받습니다.
-2. 기존 `BACKFILL` 체크포인트를 조회합니다.
-3. 체크포인트 이후 블록부터 처리 범위를 조정합니다.
-4. 범위를 `batchSize` 기준으로 나눕니다.
-5. 각 배치를 순차 처리합니다.
-6. 처리 완료 후 체크포인트를 갱신합니다.
-
-### 2. 실시간 동기화
-
-1. `FORWARDFILL` 체크포인트를 조회합니다.
-   1. 체크포인트가 있으면 그 다음 블록부터 시작합니다.
-   2. 체크포인트가 없으면 최신 블록을 기준으로 시작합니다.
-2. 이후 polling 방식으로 신규 블록을 처리합니다.
-3. 각 블록 처리 후 체크포인트를 갱신합니다.
-
-### 3. Transfer 이벤트 인덱싱
-
-1. 블록 범위의 로그를 조회합니다.
-2. ERC-20 Transfer 이벤트를 디코딩합니다.
-3. 대상 지갑 주소와 관련된 이벤트만 필터링합니다.
-4. 관련 트랜잭션을 저장합니다.
-5. `Transfer` 이벤트를 저장합니다.
-
----
+## 스크린샷 / 테스트 결과
+
+![transfer-event-test](public/transfer-event-test.png)
