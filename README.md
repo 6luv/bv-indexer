@@ -105,6 +105,10 @@
 
 - Backfill / Forwardfill에 대한 RPC 요청량을 하나로 묶어야 하는지
 
+4. `/sync/application/run-backfill.service.ts` 객체 생성 방법
+
+- constructure에 넣는 방법과 직접 주입하는 것의 차이점
+
 ## 스크린샷 / 테스트 결과
 
-![backfill-test](이미지_첨부_후_생성된_링크)
+![backfill-test](public/backfill-tests.png)
