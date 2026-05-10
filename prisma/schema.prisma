@@ -7,6 +7,19 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CheckpointType {
+  BACKFILL
+  FORWARDFILL
+}
+
+model Checkpoint {
+  type               CheckpointType @id
+  lastProcessedBlock BigInt
+  updatedAt          DateTime
+
+  @@map("checkpoint")
+}
+
 model Transaction {
   hash           String   @id @db.VarChar(66)
   fromAddress    String   @map("from_address") @db.VarChar(42)
